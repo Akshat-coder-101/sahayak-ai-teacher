@@ -21,15 +21,24 @@ class VisualRouter:
         combined = f"{concept_l} {context_l}"
 
         # 1. Subject Classification Heuristic
-        if any(w in combined for w in ["force", "gravity", "velocity", "acceleration", "newton", "friction", "momentum", "torque", "kinetic", "potential energy", "wave", "optics", "thermodynamics", "circuit", "ohm", "voltage", "current"]):
+        if any(w in combined for w in [
+            "network", "packet", "router", "switch", "cisco", "tracer", "topology", 
+            "ip ", "ipv4", "ipv6", "tcp", "udp", "protocol", "ethernet", "lan", "wan", 
+            "vlan", "port", "socket", "subnet", "dhcp", "dns", "http", "lab manual", 
+            "simulation environment", "simulation", "prerequisite", "hardware", 
+            "infrastructure", "client", "server", "firewall", "osi", "mac address", 
+            "bridge", "gateway", "wireshark", "ec307", "packet tracer"
+        ]):
+            subject = "networking"
+        elif any(w in combined for w in ["force", "gravity", "velocity", "acceleration", "newton", "friction", "momentum", "torque", "kinetic", "potential energy", "wave", "optics", "thermodynamics", "circuit", "ohm", "voltage", "current"]):
             subject = "physics"
         elif any(w in combined for w in ["equation", "calculus", "derivative", "integral", "quadratic", "algebra", "polynomial", "matrix", "geometry", "trigonometry", "function", "parabola", "logarithm", "root"]):
             subject = "mathematics"
-        elif any(w in combined for w in ["cell", "mitochondria", "photosynthesis", "dna", "rna", "protein", "organelle", "membrane", "respiration", "enzyme", "neuron", "heart", "organ", "plant", "ecology", "genetics"]):
+        elif any(w in combined for w in ["cell", "mitochondria", "photosynthesis", "dna", "rna", "protein", "organelle", "membrane", "respiration", "enzyme", "neuron", "heart", "organ", "plant", "ecology", "genetics", "chromosome", "tissue"]):
             subject = "biology"
         elif any(w in combined for w in ["war", "empire", "revolution", "treaty", "century", "dynasty", "historical", "ancient", "medieval", "president", "civilization", "reign", "colony", "timeline"]):
             subject = "history"
-        elif any(w in combined for w in ["binary search", "search", "sort", "algorithm", "array", "tree", "graph", "recursion", "loop", "stack", "queue", "dynamic programming", "python", "code", "pointer", "complexity", "big o"]):
+        elif any(w in combined for w in ["binary search", "search", "sort", "algorithm", "array", "tree", "graph", "recursion", "loop", "stack", "queue", "dynamic programming", "python", "code", "pointer", "complexity", "big o", "data structure", "compiler", "operating system"]):
             subject = "computer_science"
         else:
             subject = "general"
@@ -38,7 +47,21 @@ class VisualRouter:
         complexity = "simple" if learner_level == "beginner" else ("advanced" if learner_level == "advanced" else "intermediate")
 
         # 2. Subject-Specific Pedagogical Visual Decision
-        if subject == "physics":
+        if subject == "networking":
+            return VisualDecision(
+                subject="networking",
+                concept_type="network_architecture",
+                pedagogical_goal=f"Model topology, physical/logical interconnects, and simulation environment data pathways for {concept}.",
+                visual_needed="required",
+                visual_type="network-topology",
+                reason="Topological diagrams visually clarify device roles, IP addressing, switching, and routing pathways without cognitive overload.",
+                generation_method="svg_diagram",
+                complexity=complexity,
+                observation_prompt="Trace the packet flow from the host terminal through the Layer-2 switch and default gateway router to the lab simulation environment.",
+                knowledge_check="Which network device performs Layer-2 frame forwarding versus Layer-3 IP packet routing?"
+            )
+
+        elif subject == "physics":
             if any(w in combined for w in ["force", "newton", "friction", "gravity", "equilibrium", "free body", "tension"]):
                 return VisualDecision(
                     subject="physics",
@@ -177,20 +200,35 @@ class VisualRouter:
         Generates a validated, domain-accurate VisualSpec accompanied by its VisualDecision.
         """
         decision = cls.decide_visual_strategy(concept, context, depth)
-        effective_type = visual_type if visual_type in ["free_body_diagram", "process_cycle", "equation/graph", "labeled-diagram", "timeline/map", "code+execution"] else decision.visual_type
+        effective_type = visual_type if visual_type in [
+            "free_body_diagram", "process_cycle", "equation/graph", 
+            "labeled-diagram", "timeline/map", "code+execution", "network-topology"
+        ] else decision.visual_type
 
-        if effective_type == "free_body_diagram" or (decision.subject == "physics" and decision.concept_type == "force_dynamics"):
+        # 1. Network Topology / Systems
+        if effective_type in ["network-topology", "network", "topology"] or decision.subject == "networking":
+            spec = cls._generate_network_topology_spec(concept, depth)
+        # 2. Physics Vector Diagrams
+        elif effective_type == "free_body_diagram" or (decision.subject == "physics" and decision.concept_type == "force_dynamics"):
             spec = cls._generate_free_body_diagram_spec(concept, depth)
+        # 3. Biology Process Cycles (Photosynthesis, Krebs)
         elif effective_type == "process_cycle" or (decision.subject == "biology" and decision.concept_type == "cellular_process"):
             spec = cls._generate_process_cycle_spec(concept, depth)
+        # 4. Mathematics & Physics Plots
         elif "equation" in effective_type or "graph" in effective_type or decision.subject in ["mathematics", "physics"]:
             spec = cls._generate_math_physics_spec(concept, depth)
-        elif "diagram" in effective_type or decision.subject == "biology":
+        # 5. Biology Anatomy Diagram (ONLY when actually biology!)
+        elif decision.subject == "biology" or (effective_type == "labeled-diagram" and any(w in concept.lower() for w in ["cell", "mitochondria", "dna", "organelle", "organ", "plant", "tissue", "nucleus", "membrane"])):
             spec = cls._generate_biology_diagram_spec(concept, depth)
+        # 6. Chronology & History
         elif "timeline" in effective_type or "map" in effective_type or decision.subject == "history":
             spec = cls._generate_history_timeline_spec(concept, depth)
-        else:
+        # 7. Code Execution
+        elif "code" in effective_type or decision.subject == "computer_science":
             spec = cls._generate_code_execution_spec(concept, depth, code_snippet)
+        # 8. General Conceptual Architecture (NOT Biology!)
+        else:
+            spec = cls._generate_conceptual_architecture_spec(concept, depth)
 
         spec.decision = decision
         return spec
@@ -415,6 +453,171 @@ class VisualRouter:
                     {"name": "Core Nucleus", "role": "Master control library containing hereditary DNA and transcription machinery."},
                     {"name": "Mitochondria", "role": "Cellular power plant synthesizing ATP via oxidative phosphorylation."},
                     {"name": "Cell Membrane", "role": "Phospholipid bilayer maintaining homeostasis and selective ion transit."}
+                ]
+            }
+        )
+
+    @staticmethod
+    def _generate_network_topology_spec(concept: str, depth: str) -> VisualSpec:
+        """Generates Cisco Packet Tracer & Computer Networks lab topology diagram."""
+        svg_code = """
+        <svg viewBox="0 0 600 320" xmlns="http://www.w3.org/2000/svg" className="w-full h-auto">
+          <defs>
+            <linearGradient id="netGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+              <stop offset="0%" stopColor="#1e293b" />
+              <stop offset="100%" stopColor="#0f172a" />
+            </linearGradient>
+            <filter id="packetGlow" x="-20%" y="-20%" width="140%" height="140%">
+              <feGaussianBlur stdDeviation="4" result="blur" />
+              <feComposite in="SourceGraphic" in2="blur" operator="over" />
+            </filter>
+            <marker id="netArrow" viewBox="0 0 10 10" refX="6" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse">
+              <path d="M 0 2 L 8 5 L 0 8 z" fill="#38bdf8" />
+            </marker>
+          </defs>
+          <rect width="600" height="320" rx="14" fill="#0b1120" stroke="#1e293b" strokeWidth="2"/>
+
+          <!-- Top Status Header -->
+          <rect x="25" y="15" width="550" height="42" rx="8" fill="#1e293b" stroke="#334155" strokeWidth="1.2"/>
+          <circle cx="45" cy="36" r="6" fill="#10b981" filter="url(#packetGlow)"/>
+          <text x="60" y="40" fill="#f8fafc" fontSize="12" fontWeight="bold">Cisco Packet Tracer Simulation Lab • Physical &amp; Logical Topology</text>
+          <rect x="470" y="26" width="95" height="20" rx="4" fill="#0f172a" stroke="#38bdf8" strokeWidth="1"/>
+          <text x="517" y="39" fill="#38bdf8" fontSize="10" fontWeight="bold" textAnchor="middle">LINK ACTIVE</text>
+
+          <!-- Interconnect Cables -->
+          <!-- Host to Switch -->
+          <line x1="110" y1="165" x2="220" y2="165" stroke="#38bdf8" strokeWidth="2.5" strokeDasharray="5 3"/>
+          <text x="165" y="155" fill="#94a3b8" fontSize="9" textAnchor="middle">Fa0/1 (FastEthernet)</text>
+          
+          <!-- Switch to Router -->
+          <line x1="280" y1="165" x2="380" y2="165" stroke="#818cf8" strokeWidth="3"/>
+          <text x="330" y="155" fill="#a5b4fc" fontSize="9" textAnchor="middle">Gi0/1 (Trunk)</text>
+
+          <!-- Router to Server -->
+          <line x1="440" y1="165" x2="510" y2="165" stroke="#34d399" strokeWidth="2.5" strokeDasharray="5 3"/>
+          <text x="475" y="155" fill="#86efac" fontSize="9" textAnchor="middle">Gi0/0</text>
+
+          <!-- Active Packet in Transit -->
+          <circle cx="330" cy="165" r="5" fill="#f43f5e" filter="url(#packetGlow)"/>
+          <text x="330" y="185" fill="#fda4af" fontSize="9" fontWeight="bold" textAnchor="middle">IPv4 Packet (TTL=64)</text>
+
+          <!-- Node 1: Host PC0 -->
+          <rect x="40" y="125" width="80" height="80" rx="10" fill="#1e293b" stroke="#38bdf8" strokeWidth="2"/>
+          <rect x="52" y="137" width="56" height="36" rx="4" fill="#0f172a" stroke="#38bdf8" strokeWidth="1"/>
+          <text x="80" y="158" fill="#38bdf8" fontSize="10" fontWeight="bold" textAnchor="middle">&gt;_ PC0</text>
+          <text x="80" y="190" fill="#f8fafc" fontSize="10" fontWeight="bold" textAnchor="middle">Host PC0</text>
+          <text x="80" y="220" fill="#94a3b8" fontSize="9" textAnchor="middle">192.168.1.10/24</text>
+          <text x="80" y="233" fill="#64748b" fontSize="8" textAnchor="middle">Default Gateway: .1</text>
+
+          <!-- Node 2: Layer-2 Switch (Cisco 2960) -->
+          <rect x="220" y="125" width="70" height="80" rx="10" fill="#1e293b" stroke="#818cf8" strokeWidth="2"/>
+          <rect x="230" y="145" width="50" height="24" rx="4" fill="#312e81"/>
+          <circle cx="240" cy="157" r="2.5" fill="#34d399"/>
+          <circle cx="248" cy="157" r="2.5" fill="#34d399"/>
+          <circle cx="256" cy="157" r="2.5" fill="#34d399"/>
+          <circle cx="264" cy="157" r="2.5" fill="#f59e0b"/>
+          <text x="255" y="190" fill="#f8fafc" fontSize="10" fontWeight="bold" textAnchor="middle">Switch 2960</text>
+          <text x="255" y="220" fill="#a5b4fc" fontSize="9" textAnchor="middle">Layer-2 Switching</text>
+          <text x="255" y="233" fill="#64748b" fontSize="8" textAnchor="middle">VLAN 1 Default</text>
+
+          <!-- Node 3: Edge Router (Cisco 2911) -->
+          <circle cx="410" cy="165" r="38" fill="#1e293b" stroke="#34d399" strokeWidth="2.5"/>
+          <path d="M 390 165 L 430 165 M 410 145 L 410 185" stroke="#34d399" strokeWidth="2"/>
+          <text x="410" y="169" fill="#34d399" fontSize="14" fontWeight="bold" textAnchor="middle">☩</text>
+          <text x="410" y="220" fill="#f8fafc" fontSize="10" fontWeight="bold" textAnchor="middle">Router R1 (Gateway)</text>
+          <text x="410" y="233" fill="#34d399" fontSize="9" textAnchor="middle">192.168.1.1</text>
+
+          <!-- Node 4: Lab Simulation Server -->
+          <rect x="500" y="125" width="75" height="80" rx="10" fill="#1e293b" stroke="#f59e0b" strokeWidth="2"/>
+          <line x1="510" y1="145" x2="565" y2="145" stroke="#f59e0b" strokeWidth="1.5"/>
+          <line x1="510" y1="155" x2="565" y2="155" stroke="#f59e0b" strokeWidth="1.5"/>
+          <line x1="510" y1="165" x2="565" y2="165" stroke="#f59e0b" strokeWidth="1.5"/>
+          <text x="537" y="190" fill="#f8fafc" fontSize="10" fontWeight="bold" textAnchor="middle">Lab Server</text>
+          <text x="537" y="220" fill="#fcd34d" fontSize="9" textAnchor="middle">10.0.0.5</text>
+          <text x="537" y="233" fill="#64748b" fontSize="8" textAnchor="middle">HTTP / DNS / DHCP</text>
+
+          <!-- Bottom Legend Bar -->
+          <rect x="25" y="260" width="550" height="45" rx="8" fill="#0f172a" stroke="#1e293b" strokeWidth="1"/>
+          <text x="45" y="287" fill="#94a3b8" fontSize="10">📌 <tspan fontWeight="bold" fill="#f8fafc">Simulation Target:</tspan> Verify end-to-end packet delivery, subnet masks, and interface IP bindings.</text>
+        </svg>
+        """.strip()
+
+        return VisualSpec(
+            type="network-topology",
+            title=f"Network Architecture & Lab Simulation: {concept}",
+            payload={
+                "svg_code": svg_code,
+                "labels": [
+                    {"name": "Host PC0 (Client Terminal)", "role": "Simulation workstation executing ping, traceroute, and protocol packet capture."},
+                    {"name": "Cisco 2960 Switch", "role": "Layer-2 distribution fabric forwarding Ethernet frames via MAC address tables."},
+                    {"name": "Gateway Router R1", "role": "Layer-3 routing appliance managing inter-subnet forwarding and IP routing tables."},
+                    {"name": "Lab Target Server", "role": "Simulated infrastructure node providing DNS, DHCP, and HTTP services."}
+                ]
+            }
+        )
+
+    @staticmethod
+    def _generate_conceptual_architecture_spec(concept: str, depth: str) -> VisualSpec:
+        """Generates general structural model for engineering & conceptual topics."""
+        svg_code = f"""
+        <svg viewBox="0 0 600 320" xmlns="http://www.w3.org/2000/svg" className="w-full h-auto">
+          <defs>
+            <filter id="boxGlow" x="-20%" y="-20%" width="140%" height="140%">
+              <feGaussianBlur stdDeviation="4" result="blur" />
+              <feComposite in="SourceGraphic" in2="blur" operator="over" />
+            </filter>
+            <marker id="flowArrow" viewBox="0 0 10 10" refX="6" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse">
+              <path d="M 0 2 L 8 5 L 0 8 z" fill="#38bdf8" />
+            </marker>
+          </defs>
+          <rect width="600" height="320" rx="14" fill="#0f172a" stroke="#334155" strokeWidth="2"/>
+
+          <!-- Header -->
+          <rect x="30" y="20" width="540" height="42" rx="8" fill="#1e293b" stroke="#475569" strokeWidth="1"/>
+          <text x="300" y="46" fill="#38bdf8" fontSize="13" fontWeight="bold" textAnchor="middle">System Framework &amp; Analytical Pipeline: {concept[:38]}</text>
+
+          <!-- Stage 1: Inputs & Prerequisites -->
+          <rect x="40" y="100" width="140" height="110" rx="10" fill="#1e293b" stroke="#38bdf8" strokeWidth="2"/>
+          <text x="110" y="130" fill="#38bdf8" fontSize="11" fontWeight="bold" textAnchor="middle">1. Baseline Inputs</text>
+          <text x="110" y="152" fill="#94a3b8" fontSize="9" textAnchor="middle">Prerequisites</text>
+          <text x="110" y="170" fill="#94a3b8" fontSize="9" textAnchor="middle">System State</text>
+          <text x="110" y="190" fill="#6ee7b7" fontSize="9" fontWeight="bold" textAnchor="middle">Initialized [Ready]</text>
+
+          <!-- Flow Arrow 1 -->
+          <line x1="180" y1="155" x2="225" y2="155" stroke="#38bdf8" strokeWidth="3" markerEnd="url(#flowArrow)"/>
+
+          <!-- Stage 2: Core Processing Engine -->
+          <rect x="230" y="85" width="145" height="140" rx="10" fill="#1e293b" stroke="#818cf8" strokeWidth="2.5" filter="url(#boxGlow)"/>
+          <text x="302" y="120" fill="#818cf8" fontSize="12" fontWeight="bold" textAnchor="middle">2. Core Operations</text>
+          <text x="302" y="145" fill="#f8fafc" fontSize="10" textAnchor="middle">Transformation Logic</text>
+          <text x="302" y="165" fill="#94a3b8" fontSize="9" textAnchor="middle">Feedback Loop Control</text>
+          <text x="302" y="195" fill="#fcd34d" fontSize="9" fontWeight="bold" textAnchor="middle">Active Transformation</text>
+
+          <!-- Flow Arrow 2 -->
+          <line x1="375" y1="155" x2="415" y2="155" stroke="#38bdf8" strokeWidth="3" markerEnd="url(#flowArrow)"/>
+
+          <!-- Stage 3: Verification & Outputs -->
+          <rect x="420" y="100" width="140" height="110" rx="10" fill="#1e293b" stroke="#34d399" strokeWidth="2"/>
+          <text x="490" y="130" fill="#34d399" fontSize="11" fontWeight="bold" textAnchor="middle">3. Verified Target</text>
+          <text x="490" y="152" fill="#94a3b8" fontSize="9" textAnchor="middle">Observable Metrics</text>
+          <text x="490" y="170" fill="#94a3b8" fontSize="9" textAnchor="middle">Checkpoint Mastery</text>
+          <text x="490" y="190" fill="#34d399" fontSize="9" fontWeight="bold" textAnchor="middle">Validated ✓</text>
+
+          <!-- Return Feedback Loop -->
+          <path d="M 490 210 Q 302 270 110 210" stroke="#f59e0b" strokeWidth="2" strokeDasharray="5 3" fill="none" markerEnd="url(#flowArrow)"/>
+          <text x="302" y="275" fill="#f59e0b" fontSize="9" fontWeight="bold" textAnchor="middle">Continuous Validation &amp; Adaptive Calibration</text>
+        </svg>
+        """.strip()
+
+        return VisualSpec(
+            type="labeled-diagram",
+            title=f"System Framework: {concept}",
+            payload={
+                "svg_code": svg_code,
+                "labels": [
+                    {"name": "Foundational Prerequisites", "role": "Baseline environment configurations, initial parameters, and input conditions."},
+                    {"name": "Operational Core Engine", "role": "Active computational or analytical pipeline executing state transformations."},
+                    {"name": "Verification Matrix", "role": "Observable criteria and output checkpoints validating correct system execution."}
                 ]
             }
         )

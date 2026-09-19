@@ -18,7 +18,10 @@ import {
   ChevronUp,
   Sparkles,
   Info,
-  ArrowRight
+  ArrowRight,
+  Network,
+  Server,
+  Cpu
 } from "lucide-react";
 import {
   ResponsiveContainer,
@@ -399,8 +402,8 @@ export default function VisualRenderer({ visualSpec }: VisualRendererProps) {
     );
   }
 
-  // 4. BIOLOGY & LIFE SCIENCES ROUTER
-  if (type === "labeled-diagram" || type.includes("bio") || type.includes("diagram")) {
+  // 4. COMPUTER NETWORKS & SYSTEM TOPOLOGY ROUTER
+  if (type === "network-topology" || type.includes("network") || type.includes("topology") || decision?.subject === "networking") {
     const labels = payload?.labels || [];
 
     return (
@@ -409,16 +412,83 @@ export default function VisualRenderer({ visualSpec }: VisualRendererProps) {
 
         <div className="flex items-center justify-between pb-3 border-b border-border mb-3 flex-wrap gap-2">
           <div className="flex items-center gap-2 min-w-0">
-            <Layers className="w-5 h-5 text-[#0F7B3F] shrink-0" />
+            <Network className="w-5 h-5 text-indigo-600 shrink-0" />
             <h3 className="font-bold text-sm text-ink-primary truncate">{title}</h3>
           </div>
-          <span className="text-xs px-2.5 py-0.5 rounded bg-emerald-50 text-[#0F7B3F] font-bold border border-emerald-200 shrink-0">
-            Biology & Life Sciences
+          <span className="text-xs px-2.5 py-0.5 rounded bg-indigo-50 text-indigo-700 font-bold border border-indigo-200 shrink-0">
+            Computer Networks &amp; Systems
           </span>
         </div>
 
         {/* Interactive SVG Diagram */}
-        <div className="relative rounded bg-white border border-border overflow-x-auto max-w-full flex items-center justify-center p-3 min-h-[200px]">
+        <div className="relative rounded bg-slate-950 border border-slate-800 overflow-x-auto max-w-full flex items-center justify-center p-3 min-h-[220px]">
+          {payload?.svg_code ? (
+            <div 
+              className="w-full h-full flex items-center justify-center overflow-x-auto max-w-full"
+              dangerouslySetInnerHTML={{ __html: payload.svg_code }} 
+            />
+          ) : (
+            <div className="text-center p-6 text-slate-400">
+              <Network className="w-10 h-10 text-indigo-400 mx-auto mb-2 opacity-80" />
+              <p className="text-xs font-semibold">Network Topology &amp; Simulation Environment</p>
+            </div>
+          )}
+        </div>
+
+        {/* Interactive Hotspot Pills */}
+        {labels.length > 0 && (
+          <div className="mt-3">
+            <span className="text-xs font-bold text-ink-secondary block mb-1.5">Network Architecture Components:</span>
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-2">
+              {labels.map((item: any, idx: number) => (
+                <div 
+                  key={idx}
+                  onClick={() => setSelectedHotspot(item)}
+                  className={`p-2.5 rounded border text-left cursor-pointer transition-all ${
+                    selectedHotspot?.name === item.name
+                      ? "bg-indigo-50 border-indigo-500 text-ink-primary shadow-2xs scale-[1.02]"
+                      : "bg-white border-border hover:border-indigo-300 text-ink-secondary"
+                  }`}
+                >
+                  <p className="font-bold text-xs text-indigo-600 flex items-center gap-1 font-mono">
+                    <span className="w-2 h-2 rounded-full bg-indigo-600"></span>
+                    {item.name}
+                  </p>
+                  <p className="text-[11px] text-ink-muted mt-1 line-clamp-2">{item.role}</p>
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
+      </div>
+    );
+  }
+
+  // 5. LABELED DIAGRAM & SYSTEM FRAMEWORK ROUTER
+  if (type === "labeled-diagram" || type.includes("bio") || type.includes("diagram") || type.includes("framework")) {
+    const labels = payload?.labels || [];
+    const isBiology = decision?.subject === "biology" || title.toLowerCase().includes("biological") || type.includes("bio");
+    const isCS = decision?.subject === "computer_science" || title.toLowerCase().includes("algorithm");
+    const badgeLabel = isBiology ? "Biology & Life Sciences" : (isCS ? "Computer Science & Systems" : "System Framework & Architecture");
+    const badgeClass = isBiology ? "bg-emerald-50 text-[#0F7B3F] border-emerald-200" : (isCS ? "bg-violet-50 text-violet-700 border-violet-200" : "bg-sky-50 text-sky-700 border-sky-200");
+    const iconColor = isBiology ? "text-[#0F7B3F]" : (isCS ? "text-violet-600" : "text-sky-600");
+
+    return (
+      <div className="bg-white rounded-lg p-4 sm:p-5 border border-border flex flex-col h-full shadow-2xs hover:shadow-md transition-shadow max-w-full overflow-hidden">
+        <DecisionInspector decision={decision} />
+
+        <div className="flex items-center justify-between pb-3 border-b border-border mb-3 flex-wrap gap-2">
+          <div className="flex items-center gap-2 min-w-0">
+            <Layers className={`w-5 h-5 ${iconColor} shrink-0`} />
+            <h3 className="font-bold text-sm text-ink-primary truncate">{title}</h3>
+          </div>
+          <span className={`text-xs px-2.5 py-0.5 rounded font-bold border shrink-0 ${badgeClass}`}>
+            {badgeLabel}
+          </span>
+        </div>
+
+        {/* Interactive SVG Diagram */}
+        <div className="relative rounded bg-slate-900 border border-slate-800 overflow-x-auto max-w-full flex items-center justify-center p-3 min-h-[200px]">
           {payload?.svg_code ? (
             <div 
               className="w-full h-full flex items-center justify-center overflow-x-auto max-w-full"
@@ -426,8 +496,8 @@ export default function VisualRenderer({ visualSpec }: VisualRendererProps) {
             />
           ) : (
             <div className="text-center p-6 text-ink-muted">
-              <Layers className="w-10 h-10 text-[#0F7B3F] mx-auto mb-2 opacity-80" />
-              <p className="text-xs font-semibold">Interactive Labeled Structural Model</p>
+              <Layers className={`w-10 h-10 ${iconColor} mx-auto mb-2 opacity-80`} />
+              <p className="text-xs font-semibold">Interactive Structural Model</p>
             </div>
           )}
         </div>
@@ -443,12 +513,12 @@ export default function VisualRenderer({ visualSpec }: VisualRendererProps) {
                   onClick={() => setSelectedHotspot(item)}
                   className={`p-2.5 rounded border text-left cursor-pointer transition-all ${
                     selectedHotspot?.name === item.name
-                      ? "bg-emerald-50 border-[#0F7B3F] text-ink-primary shadow-2xs scale-[1.02]"
-                      : "bg-white border-border hover:border-emerald-300 text-ink-secondary"
+                      ? isBiology ? "bg-emerald-50 border-[#0F7B3F] text-ink-primary shadow-2xs scale-[1.02]" : "bg-sky-50 border-sky-500 text-ink-primary shadow-2xs scale-[1.02]"
+                      : "bg-white border-border hover:border-slate-300 text-ink-secondary"
                   }`}
                 >
-                  <p className="font-bold text-xs text-[#0F7B3F] flex items-center gap-1 font-mono">
-                    <span className="w-2 h-2 rounded-full bg-[#0F7B3F]"></span>
+                  <p className={`font-bold text-xs flex items-center gap-1 font-mono ${iconColor}`}>
+                    <span className={`w-2 h-2 rounded-full ${isBiology ? "bg-[#0F7B3F]" : (isCS ? "bg-violet-600" : "bg-sky-600")}`}></span>
                     {item.name}
                   </p>
                   <p className="text-[11px] text-ink-muted mt-1 line-clamp-2">{item.role}</p>

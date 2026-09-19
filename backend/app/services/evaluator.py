@@ -1,6 +1,8 @@
 import uuid
 import random
 import logging
+import asyncio
+import re
 from typing import Dict, Any, List, Tuple, Optional
 from sqlalchemy.orm import Session
 from ..database import DBLessonSession, DBCheckpointAttempt
@@ -20,6 +22,11 @@ logger = logging.getLogger("sahayak.evaluator")
 
 class EvaluatorService:
     ANALOGIES_BANK = {
+        "networking": [
+            ("A city postal highway with local mail vans, distribution postal hubs, and interstate trucks delivering sealed envelopes by zip codes.", "Think of computer networking like postal delivery: your host terminal writes the destination IP address on an envelope, the local switch directs it to your building's mailbox, and the gateway router sends it across the national highway."),
+            ("A central airport air-traffic control and luggage sorting terminal routing tagged suitcases to designated flight gates.", "Like airport luggage sorting: suitcases are tagged with destination codes (IP/MAC), conveyor belts (switches) sort them to the right carousel, and international flights (routers) carry them across continents."),
+            ("A secure office telephone switchboard connecting extension numbers to outside world lines.", "Think of a company PBX switchboard: local extension calls stay inside the building via the switch, while external numbers get forwarded through the gateway trunk line.")
+        ],
         "physics": [
             ("A roller coaster cart on a steep hill exchanging potential gravitational energy into kinetic speed.", "Imagine a roller coaster at the crest: pure potential energy, converted into rushing kinetic speed as it plunges."),
             ("A compressed spring storing mechanical strain until released to push a block.", "Think of a tightly coiled mattress spring: pushing on it stores potential energy that snaps into motion."),
@@ -48,7 +55,13 @@ class EvaluatorService:
     @classmethod
     def _detect_domain(cls, concept: str) -> str:
         c = concept.lower()
-        if any(w in c for w in ["force", "newton", "gravity", "energy", "velocity", "wave", "quantum", "thermo"]):
+        if any(w in c for w in [
+            "network", "packet", "router", "switch", "cisco", "tracer", "topology", 
+            "ip", "tcp", "udp", "protocol", "ethernet", "lan", "wan", "vlan", "port", 
+            "socket", "subnet", "dhcp", "dns", "http", "lab manual", "simulation"
+        ]):
+            return "networking"
+        elif any(w in c for w in ["force", "newton", "gravity", "energy", "velocity", "wave", "quantum", "thermo"]):
             return "physics"
         elif any(w in c for w in ["cell", "dna", "bio", "organ", "plant", "heart", "mitochondria", "enzyme"]):
             return "biology"
@@ -72,12 +85,12 @@ class EvaluatorService:
         prev = (prev_visual_type or "labeled-diagram").lower()
         domain = cls._detect_domain(concept)
         
-        if "diagram" in prev:
-            return "equation/graph" if domain in ["physics", "general"] else "timeline/map"
+        if "diagram" in prev or "topology" in prev:
+            return "equation/graph" if domain in ["physics", "general"] else ("code+execution" if domain in ["programming", "networking"] else "timeline/map")
         elif "equation" in prev or "graph" in prev:
-            return "code+execution" if domain == "programming" else "labeled-diagram"
+            return "code+execution" if domain in ["programming", "networking"] else "labeled-diagram"
         elif "code" in prev:
-            return "equation/graph"
+            return "network-topology" if domain == "networking" else "equation/graph"
         elif "timeline" in prev or "map" in prev:
             return "labeled-diagram"
         return "equation/graph"
@@ -110,8 +123,65 @@ class EvaluatorService:
         # 1. Check deliberate judging/demo triggers
         trigger_demo_reteach = force_misconception or (is_demo_mode and "correct" not in student_answer.lower())
 
-        # 2. Try LLM Student Answer Evaluation
-        if not trigger_demo_reteach:
+        # 2. FAST-PATH: Deterministic Checkpoint Answer Matching (< 20ms response time)
+        # Evaluates MCQ options and direct keyword answers instantly without waiting for external LLM timeouts
+        ans_clean = student_answer.strip().lower()
+        corr_clean = (correct_answer or "").strip().lower()
+
+        is_direct_match = False
+        if corr_clean:
+            if ans_clean == corr_clean:
+                is_direct_match = True
+            elif len(ans_clean) >= 3 and ans_clean in corr_clean:
+                is_direct_match = True
+            elif len(corr_clean) >= 3 and corr_clean in ans_clean:
+                is_direct_match = True
+            else:
+                # Strip MCQ prefix (e.g. "b) cisco packet tracer..." -> "cisco packet tracer...")
+                clean_a = re.sub(r'^[a-d]\s*[\)\.\:\-]\s*', '', ans_clean).strip()
+                clean_c = re.sub(r'^[a-d]\s*[\)\.\:\-]\s*', '', corr_clean).strip()
+                if clean_a and clean_c and (clean_a == clean_c or clean_a in clean_c or clean_c in clean_a):
+                    is_direct_match = True
+                
+                # Check option letter match (e.g. "B" matching "B) ...")
+                a_letter = ans_clean[0] if (len(ans_clean) >= 2 and ans_clean[1] in [')', '.', ':', ' ']) else (ans_clean if len(ans_clean) == 1 else "")
+                c_letter = corr_clean[0] if (len(corr_clean) >= 2 and corr_clean[1] in [')', '.', ':', ' ']) else (corr_clean if len(corr_clean) == 1 else "")
+                if a_letter and c_letter and a_letter == c_letter:
+                    is_direct_match = True
+
+        if is_direct_match and not trigger_demo_reteach:
+            feedback = f"Correct! Excellent work. You selected the right answer: **{student_answer}**."
+            db_attempt = DBCheckpointAttempt(
+                id=str(uuid.uuid4()),
+                session_id=session_id,
+                segment_id=segment_id,
+                question_text=question_text,
+                student_answer=student_answer,
+                classification="correct",
+                feedback=feedback
+            )
+            db.add(db_attempt)
+            db.commit()
+
+            decision_state = TeachingDecisionState(
+                current_concept=concept,
+                student_understanding="mastery",
+                confidence=0.95,
+                action="advance",
+                reason="Student demonstrated clear conceptual understanding by selecting the correct grounded option.",
+                next_step="next_concept" if segment_id < len(segments) else "final_assessment",
+                remaining_time_minutes=max(1, (len(segments) - segment_id) * 4)
+            )
+
+            return InteractionResponse(
+                action="advance",
+                classification="correct",
+                feedback=feedback,
+                next_segment_id=segment_id + 1 if segment_id < len(segments) else None,
+                decision_state=decision_state
+            )
+
+        # 3. LLM Diagnostic Evaluation (Bounded with strict 4.0s timeout for open-ended or wrong answers)
             try:
                 system_prompt = (
                     "You are an expert diagnostic cognitive evaluator in an AI teaching system. "
@@ -147,11 +217,14 @@ Output JSON schema:
   }}
 }}
 """
-                llm_eval = await LLMService.generate_json(
-                    system_prompt=system_prompt,
-                    user_prompt=user_prompt,
-                    schema_hint="Diagnostic evaluation JSON with classification, feedback, misconception_name, new_analogy, followup_question",
-                    temperature=0.2
+                llm_eval = await asyncio.wait_for(
+                    LLMService.generate_json(
+                        system_prompt=system_prompt,
+                        user_prompt=user_prompt,
+                        schema_hint="Diagnostic evaluation JSON with classification, feedback, misconception_name, new_analogy, followup_question",
+                        temperature=0.2
+                    ),
+                    timeout=4.5
                 )
 
                 classification = llm_eval.get("classification", "misconception").lower()
@@ -229,8 +302,15 @@ Output JSON schema:
                 new_visual_type = cls._get_distinct_visual_type(prev_visual_type, concept)
                 visual_spec = VisualRouter.generate_visual_spec(f"[Adaptive Reteach] {concept}", new_visual_type, level)
 
-                tts_res = await TTSService.generate_speech(spoken_script, language=language)
-                audio_url = tts_res.get("audio_url")
+                audio_url = None
+                try:
+                    tts_res = await asyncio.wait_for(
+                        TTSService.generate_speech(spoken_script, language=language),
+                        timeout=2.0
+                    )
+                    audio_url = tts_res.get("audio_url")
+                except Exception as tts_err:
+                    logger.warning(f"[EvaluatorService] Reteach TTS timed out or skipped: {tts_err}")
                 
                 # Split captions
                 sentences = [s.strip() for s in spoken_script.split(".") if s.strip()]
