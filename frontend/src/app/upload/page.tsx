@@ -19,7 +19,9 @@ import {
   MessageSquare,
   Globe,
   Sliders,
-  Check
+  Check,
+  Download,
+  PlayCircle
 } from "lucide-react";
 import { useToast } from "@/context/ToastContext";
 
@@ -77,6 +79,31 @@ export default function UploadPage() {
     }
     setError(null);
     return true;
+  };
+
+  const [isLoadingSample, setIsLoadingSample] = useState(false);
+
+  const handleLoadSampleDocument = async () => {
+    setIsLoadingSample(true);
+    setError(null);
+    try {
+      const res = await fetch("/samples/photosynthesis_chapter.pdf");
+      if (!res.ok) throw new Error("Could not fetch sample document from server.");
+      const blob = await res.blob();
+      const sampleFile = new File([blob], "photosynthesis_chapter.pdf", {
+        type: "application/pdf"
+      });
+      if (validateSelectedFile(sampleFile)) {
+        setFile(sampleFile);
+        showSuccess("Loaded sample textbook chapter: Photosynthesis & Cellular Respiration. Click 'Ingest & Vectorize Document' below to test!");
+      }
+    } catch (err: any) {
+      const msg = err.message || "Failed to load sample document";
+      setError(msg);
+      showError(msg);
+    } finally {
+      setIsLoadingSample(false);
+    }
   };
 
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -180,6 +207,72 @@ export default function UploadPage() {
       {/* Drag & Drop Upload Zone */}
       {!uploadResult ? (
         <div className="space-y-6">
+          {/* Quick Demo Document Card */}
+          <div className="bg-gradient-to-r from-blue-50/90 via-indigo-50/50 to-white rounded-xl p-4 sm:p-5 border border-blue-200/80 shadow-2xs space-y-3">
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+              <div className="flex items-center gap-3">
+                <div className="w-10 h-10 rounded-xl bg-primary text-white flex items-center justify-center shrink-0 shadow-xs">
+                  <Sparkles className="w-5 h-5" />
+                </div>
+                <div>
+                  <div className="flex items-center gap-2">
+                    <h3 className="text-sm font-bold text-black">Looking for a Demo Document?</h3>
+                    <span className="text-[10px] uppercase font-bold tracking-wider px-2 py-0.5 rounded-full bg-blue-100 text-primary border border-blue-200">
+                      Sample Ready
+                    </span>
+                  </div>
+                  <p className="text-xs text-ink-muted mt-0.5">
+                    Test the RAG pipeline instantly using our verified 3-page science chapter on <strong>Photosynthesis & Cellular Respiration</strong>.
+                  </p>
+                </div>
+              </div>
+
+              <div className="flex items-center gap-2 shrink-0">
+                <button
+                  type="button"
+                  onClick={handleLoadSampleDocument}
+                  disabled={isLoadingSample || isUploading}
+                  className="px-4 py-2 rounded-lg bg-primary hover:bg-primary-hover text-white text-xs font-bold transition-all flex items-center justify-center gap-1.5 shadow-xs cursor-pointer disabled:opacity-50"
+                >
+                  {isLoadingSample ? (
+                    <>
+                      <Loader2 className="w-3.5 h-3.5 animate-spin" />
+                      <span>Loading Sample...</span>
+                    </>
+                  ) : (
+                    <>
+                      <FileText className="w-3.5 h-3.5" />
+                      <span>⚡ Load Sample Document</span>
+                    </>
+                  )}
+                </button>
+                <a
+                  href="/samples/photosynthesis_chapter.pdf"
+                  download="photosynthesis_chapter.pdf"
+                  className="px-3 py-2 rounded-lg bg-white hover:bg-neutral-50 text-ink-secondary text-xs font-semibold border border-border transition-all flex items-center justify-center gap-1.5 shadow-2xs"
+                  title="Download the PDF to your device"
+                >
+                  <Download className="w-3.5 h-3.5" />
+                  <span>Download PDF</span>
+                </a>
+              </div>
+            </div>
+
+            <div className="pt-2 border-t border-blue-100/60 flex items-center justify-between text-xs">
+              <span className="text-ink-muted text-[11px]">
+                Pre-indexed with 768-dim embeddings, multi-stage metabolic diagrams & KaTeX equations.
+              </span>
+              <button
+                type="button"
+                onClick={() => router.push("/lesson/session-demo-photosynthesis")}
+                className="text-primary hover:text-primary-hover font-semibold inline-flex items-center gap-1 text-[11px] cursor-pointer hover:underline"
+              >
+                <PlayCircle className="w-3.5 h-3.5" />
+                <span>Jump directly to pre-generated classroom demo →</span>
+              </button>
+            </div>
+          </div>
+
           <div
             onDragOver={(e) => e.preventDefault()}
             onDrop={handleDrop}
