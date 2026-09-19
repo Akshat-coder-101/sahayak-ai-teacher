@@ -1,0 +1,12 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 180 180" width="180" height="180">
+  <defs>
+    <linearGradient id="sahayakAppleGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#0056D2" />
+      <stop offset="100%" stop-color="#001838" />
+    </linearGradient>
+  </defs>
+  <rect width="180" height="180" rx="40" fill="url(#sahayakAppleGrad)" />
+  <path d="M90 40L135 68L90 96L45 68L90 40Z" fill="#FFFFFF" />
+  <path d="M56 82V110C56 122 71 134 90 134C109 134 124 122 124 110V82L90 103L56 82Z" fill="#FFFFFF" opacity="0.9" />
+  <circle cx="135" cy="80" r="9" fill="#F97316" />
+</svg>
