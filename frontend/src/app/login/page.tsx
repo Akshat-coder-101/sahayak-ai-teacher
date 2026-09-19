@@ -129,15 +129,13 @@ export default function LoginPage() {
     <div className="max-w-4xl mx-auto space-y-8 pb-12 pt-4">
       {/* Header */}
       <div className="text-center max-w-lg mx-auto">
-        <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-[#E9F1FC] border border-blue-200 text-xs font-bold text-primary mb-3">
-          <ShieldCheck className="w-3.5 h-3.5 text-primary" />
-          <span>JWT Secure Authentication · HS256 Token Session</span>
-        </div>
-        <h1 className="text-3xl font-extrabold text-black mt-1">
-          {isSignUp ? "Create Learner Account" : "Sign In to Sahayak"}
+        <h1 className="text-3xl font-extrabold text-black tracking-tight">
+          {isSignUp ? "Create Your Account" : "Sign In to Sahayak"}
         </h1>
-        <p className="text-xs text-ink-muted mt-1.5 font-medium leading-relaxed">
-          Access your personalized adaptive AI teacher, learning history, and persistent Supabase mastery metrics.
+        <p className="text-sm text-ink-muted mt-2 font-medium leading-relaxed">
+          {isSignUp 
+            ? "Create your account to access personalized AI lessons, notes, and adaptive learning."
+            : "Welcome back! Enter your email and password to continue your personalized lessons."}
         </p>
       </div>
 
@@ -172,7 +170,7 @@ export default function LoginPage() {
                   : "text-ink-muted hover:text-black"
               }`}
             >
-              New Registration
+              Sign Up
             </button>
           </div>
 
@@ -356,10 +354,10 @@ export default function LoginPage() {
             >
               <span>
                 {isSubmitting 
-                  ? "Authenticating..." 
+                  ? "Please wait..." 
                   : isSignUp 
-                  ? "Create Account & Acquire JWT" 
-                  : "Sign In with JWT Access"}
+                  ? "Create Account" 
+                  : "Sign In"}
               </span>
               <ArrowRight className="w-4 h-4" />
             </button>
@@ -367,7 +365,7 @@ export default function LoginPage() {
 
           <div className="pt-2 text-center text-xs text-ink-muted">
             <ShieldCheck className="w-4 h-4 inline-block text-primary mr-1" />
-            <span>JWT Bearer access token issued upon successful authentication</span>
+            <span>Secure encrypted session with privacy-first storage</span>
           </div>
         </div>
 

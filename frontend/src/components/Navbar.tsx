@@ -83,6 +83,27 @@ export default function Navbar() {
     { href: "/dashboard", label: "Dashboard", icon: LayoutDashboard },
   ];
 
+  if (pathname === "/login") {
+    return (
+      <header className="sticky top-0 z-50 bg-white border-b border-border h-16 shadow-2xs">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-full flex items-center justify-between">
+          <Link href="/login" className="flex items-center gap-2 group py-1">
+            <div className="w-8 h-8 rounded bg-primary text-white flex items-center justify-center font-black text-lg shadow-2xs group-hover:scale-105 transition-transform">
+              S
+            </div>
+            <span className="font-extrabold text-xl tracking-tight text-primary">
+              sahayak
+            </span>
+            <span className="text-xs font-semibold text-ink-muted ml-1 hidden sm:inline">AI Teacher</span>
+          </Link>
+          <div className="flex items-center gap-2 text-xs font-semibold text-ink-muted">
+            <span>Student & Teacher Portal</span>
+          </div>
+        </div>
+      </header>
+    );
+  }
+
   return (
     <header className="sticky top-0 z-50 bg-white border-b border-border h-16 shadow-2xs">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-full flex items-center justify-between gap-3">
