@@ -782,9 +782,14 @@ Return ONLY a valid JSON object matching this schema:
 
         # Overall mastery percentage
         mastery_map = profile.concept_masteries
-        total_concepts = max(1, len(mastery_map))
         mastered_count = sum(1 for m in mastery_map.values() if isinstance(m, dict) and m.get("mastery") in ["mastered", "strong"])
-        overall_mastery = round((mastered_count / total_concepts) * 100, 1) if mastery_map else (round(sum(scores) / len(scores), 1) if scores else 50.0)
+        if mastery_map:
+            total_concepts = max(1, len(mastery_map))
+            overall_mastery = round((mastered_count / total_concepts) * 100, 1)
+        elif scores:
+            overall_mastery = round(sum(scores) / len(scores), 1)
+        else:
+            overall_mastery = 0.0
 
         # Learning trajectory determination
         if len(scores) >= 2:
@@ -803,9 +808,12 @@ Return ONLY a valid JSON object matching this schema:
             else:
                 trajectory = "stable"
                 trajectory_reason = "Demonstrating steady and consistent concept comprehension."
-        else:
+        elif scores or profile.topics_studied:
             trajectory = "stable"
             trajectory_reason = "Baseline learning progression established."
+        else:
+            trajectory = "new"
+            trajectory_reason = "Welcome! Start your first lesson or quiz to establish your mastery baseline."
 
         # Actionable recommendations
         recommendations: List[str] = []
@@ -816,13 +824,16 @@ Return ONLY a valid JSON object matching this schema:
         if overall_mastery >= 80:
             recommendations.append("Ready for advanced challenge homework and higher-tier learning path modules.")
         if not recommendations:
-            recommendations.append("Continue standard learning path lessons and take end-of-segment checkpoint quizzes.")
+            if not profile.topics_studied and not scores:
+                recommendations.append("Start your first lesson by typing a topic in Explore Topics or uploading your course materials.")
+            else:
+                recommendations.append("Continue standard learning path lessons and take end-of-segment checkpoint quizzes.")
 
         return LearningAnalyticsData(
             user_id=user_id,
             name=profile.name,
             overall_mastery_percent=overall_mastery,
-            total_study_minutes=max(15, len(profile.topics_studied) * 20),
+            total_study_minutes=len(profile.topics_studied) * 20,
             lessons_completed=len(profile.topics_studied),
             questions_answered=len(scores) * 4 + len(profile.concepts_studied),
             topics_mastered_count=mastered_count,

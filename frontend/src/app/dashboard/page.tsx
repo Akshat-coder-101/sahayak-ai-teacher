@@ -426,7 +426,7 @@ export default function DashboardPage() {
               value={`${analytics?.overall_mastery_percent || 0}%`}
               numericValue={analytics?.overall_mastery_percent || 0}
               suffix="%"
-              subtext="Calibrated across concept attempts"
+              subtext={analytics && analytics.overall_mastery_percent > 0 ? "Calibrated across concept attempts" : "Start your first lesson to calibrate"}
               icon={Award}
               color="text-primary"
             />
@@ -435,7 +435,7 @@ export default function DashboardPage() {
               value={`${analytics?.total_study_minutes || 0} min`}
               numericValue={analytics?.total_study_minutes || 0}
               suffix=" min"
-              subtext="Total duration across sessions"
+              subtext={analytics && analytics.total_study_minutes > 0 ? "Total duration across sessions" : "Live timer starts during lessons"}
               icon={Clock}
               color="text-blue-600"
             />

@@ -72,10 +72,10 @@ export default function LoginPage() {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [copiedNotification, setCopiedNotification] = useState(false);
 
-  // If already logged in, route to dashboard
+  // If already logged in, route to learning portal
   useEffect(() => {
     if (user) {
-      router.push("/dashboard");
+      router.push("/");
     }
   }, [user, router]);
 
@@ -111,7 +111,7 @@ export default function LoginPage() {
       } else {
         await login(email, password, name || undefined, level);
       }
-      router.push("/dashboard");
+      router.push("/");
     } catch (err: any) {
       const msg = err.message || err.detail || "Authentication failed. Please check your credentials.";
       setErrorMsg(msg);
@@ -122,7 +122,7 @@ export default function LoginPage() {
 
   const handleSelectPreset = async (preset: UserSession) => {
     await switchUser(preset);
-    router.push("/dashboard");
+    router.push("/");
   };
 
   return (
