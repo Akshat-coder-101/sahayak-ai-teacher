@@ -81,8 +81,10 @@ def seed_default_users():
 @asynccontextmanager
 async def lifespan(app: FastAPI):
     # Initialize database tables on startup
-    init_db()
-    seed_default_users()
+    try:
+        init_db()
+    except Exception as e:
+        logger.error(f"[Lifespan] Database startup initialization warning: {e}")
     
     # Ensure generated media and document storage directories exist
     media_dir = os.path.join(backend_dir, settings.MEDIA_DIR)

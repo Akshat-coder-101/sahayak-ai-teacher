@@ -201,14 +201,35 @@ def seed_default_users():
         db.close()
 
 def init_db():
+    global engine, SessionLocal
     if settings.is_postgres:
         try:
             with engine.connect() as conn:
                 conn.execute(text("CREATE EXTENSION IF NOT EXISTS vector;"))
                 conn.commit()
+            Base.metadata.create_all(bind=engine)
+            seed_default_users()
+            import logging
+            logging.getLogger("sahayak.db").info("Connected to PostgreSQL successfully.")
+            return
         except Exception as e:
             import logging
-            logging.getLogger("sahayak.db").warning(f"Could not enable pgvector extension: {e}")
+            logging.getLogger("sahayak.db").error(
+                f"[DB] PostgreSQL connection failed: {e}. "
+                "Activating resilient local SQLite fallback so container starts successfully. "
+                "NOTE: On Railway, direct Supabase host (db.xxx.supabase.co) is IPv6-only; "
+                "use the Supabase IPv4 Connection Pooler URI (port 6543 or 5432) for cloud PostgreSQL."
+            )
+            import os
+            base_dir = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+            fallback_db_path = os.path.join(base_dir, "data", "sahayak.db")
+            os.makedirs(os.path.dirname(fallback_db_path), exist_ok=True)
+            engine = create_engine(f"sqlite:///{fallback_db_path}", connect_args={"check_same_thread": False})
+            SessionLocal.configure(bind=engine)
+            Base.metadata.create_all(bind=engine)
+            seed_default_users()
+            return
+
     Base.metadata.create_all(bind=engine)
     seed_default_users()
 
