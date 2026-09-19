@@ -103,6 +103,9 @@ flowchart TD
 | **Talking AI Presenter** | Mouth articulation & blinking synced to audio waveforms on HTML5 Canvas | Web Audio API (`AnalyserNode`) |
 | **Voice Q&A** | Real-time speech-to-text for oral student checkpoint responses | Deepgram Nova-2 (`POST /api/interact/transcribe-audio`) |
 | **Curriculum DAG & Prerequisite Gating** | Visual directed acyclic graph enforcing prerequisite mastery before advancement | `GET /api/learning-path/{user_id}/{topic_id}`<br>`POST /api/learning-path/advance` |
+| **AI-Grounded YouTube Recommendations** | Real, validated YouTube video deep-dives via YouTube Data API v3 with SQLite quota caching (168h TTL), zero hallucinated URLs, and direct search fallback | `GET /api/videos/recommend` |
+| **Instant Multilingual Switch & Subtitles** | 1-click language switching across 7 regional languages with instant script/voice update (~1-2s) and bottom-docked live synchronized captions | `POST /api/lesson/language-switch` |
+| **Full Lesson MP4 Video Exporter** | Parallel scene synthesis + instantaneous FFmpeg stream-copy concatenation (`-c copy`) for exportable offline video lectures | `POST /api/lesson/{session_id}/export`<br>`GET /api/lesson/export/{job_id}/status`<br>`POST /api/video/generate` |
 
 ---
 
@@ -275,10 +278,20 @@ Sahayak supports **7 languages** with in-flight switching mid-lesson:
 * 🇪🇸 **Spanish** (`es` - Español)
 
 Students can switch languages via the UI toggle or via natural language commands (e.g., *"Ab Hindi me samjhao"*).
+* **Instant Mid-Lesson Switch (`POST /api/lesson/language-switch`)**: High-speed translation pipeline (~1–2 seconds) updates the pedagogical script, blackboard visual, and synthesized voice audio without stalling on heavy video re-encoding.
+* **Bottom-Docked Live Subtitles**: Real-time closed-caption pill docked at the bottom of the video player viewport above the scrub bar, keeping the avatar and blackboard visuals 100% visible while synchronizing sentence-by-sentence with speech audio.
 
 ---
 
-## 📊 10. Assessment, Mastery & Study Hub
+## 📺 10. AI-Grounded YouTube Video Recommendations
+
+* **Zero-Hallucination Grounding**: Rather than letting the LLM invent broken video links, Sahayak combines query synthesis with the **YouTube Data API v3** (`GET /api/videos/recommend`).
+* **Embeddability & Quality Verification**: Validates each video's embeddability (`status.embeddable == True`), duration, view counts, and channel legitimacy via `videos.list`.
+* **168-Hour SQLite Cache**: Eliminates redundant API calls and preserves quotas with a 7-day local cache (`YOUTUBE_CACHE_TTL_HOURS=168`).
+* **Direct Search Fallback**: Generates verified YouTube search deep-links if quotas expire or API keys are missing.
+* **Full-Width Player Drawer**: Seamlessly integrated into both Theater and Split modes below the lesson player with instant click-to-watch embedding.
+
+## 📊 11. Assessment, Mastery & Study Hub
 
 1. **In-Lesson Checkpoint Evaluation**: Evaluator classifies responses as `mastery`, `partial`, `misconception`, or `unclear`. Misconceptions trigger targeted remediation loops.
 2. **Document-Grounded Quiz**: Generates adaptive questions tagged with Bloom's taxonomy cognitive levels (`Recall`, `Understand`, `Apply`, `Analyze`) and mapped to specific document `chunk_id`s.
@@ -294,7 +307,7 @@ Students can switch languages via the UI toggle or via natural language commands
 
 ---
 
-## 🚀 11. Quick Start & Setup Instructions
+## 🚀 12. Quick Start & Setup Instructions
 
 > [!TIP]
 > **For Evaluators & Judges:**
@@ -434,7 +447,7 @@ Follow this production deployment guide for live hackathon demo access:
 
 ---
 
-## 🧪 12. Automated Test Suite
+## 🧪 13. Automated Test Suite
 
 Sahayak comes with a comprehensive, rigorous automated test suite with **85 passing tests** and **2 skipped** (which require live external cloud API keys), demonstrating 100% automated pass rate:
 
@@ -460,7 +473,7 @@ pytest tests/ -v
 
 ---
 
-## 🔌 13. Third-Party Services Disclosed
+## 🔌 14. Third-Party Services Disclosed
 
 | Service / Tool | Purpose | Fallback / Alternative |
 |---|---|---|

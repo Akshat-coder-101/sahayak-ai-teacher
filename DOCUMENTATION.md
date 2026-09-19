@@ -220,8 +220,9 @@ Two complementary layers:
 
 - Supported languages (`SUPPORTED_LANGUAGES`, default): **`en, hi, hinglish, ta, te, bn, es`** (English, Hindi, Hinglish, Tamil, Telugu, Bengali, Spanish).
 - **First‑class handling** for English, **Hindi**, and **Hinglish**: the planner adds tailored language clauses — e.g., *"Explain in natural Hindi in Devanagari script while keeping domain technical terms in English"* and a conversational Hinglish variant. This keeps technical vocabulary intact while making explanations natural.
-- Other languages are supported by passing the language instruction to the LLM (less specialized than the three above).
-- Language can be chosen up front or switched mid‑lesson (`/lesson/language-switch`), and voice narration follows the lesson language where the TTS engine supports it.
+- Other languages are supported by passing the language instruction to the LLM (including Tamil, Telugu, Bengali, and Spanish).
+- **Instant Mid-Lesson Language Switch (`POST /api/lesson/language-switch`)**: Students can switch languages on the fly during any segment. The engine executes a fast interactive translation loop (`skip_video=True`) that updates the pedagogical script, blackboard text, multilingual TTS audio, and synchronized subtitles in **~1–2 seconds** without stalling on slow video re-encoding. Language buttons display instant visual feedback with animated translation spinners.
+- **Docked Live Subtitles**: Closed-caption subtitle pills are docked cleanly at the bottom of the video player viewport right above the scrub timeline, keeping the center teacher avatar unobstructed while progressing sentence-by-sentence in sync with HTML5 audio playback.
 
 ## 11. Voice Implementation
 
@@ -334,8 +335,17 @@ All calls are made over REST with `httpx` (no vendor SDKs).
 - **Deepgram** — speech‑to‑text (`nova-2`).
 
 **Media / Enrichment**
-- **YouTube Data API v3** — `search.list` + `videos.list` (embeddable validation); the LLM only synthesizes queries and re‑ranks, never invents URLs; results cached in SQLite.
-- **Avatar providers** — D‑ID, HeyGen, Synthesia, Tavus, Colossyan, Replicate, Hedra, HuggingFace (all optional/paid).
+- **YouTube Data API v3 (`GET /api/videos/recommend`)** — Enriches lessons with real, curated supplementary video recommendations:
+  - **Zero Hallucination**: The LLM synthesizes targeted search queries and re-ranks results; it never invents YouTube video IDs or URLs.
+  - **Two-Tier Validation**: Calls `search.list` followed by `videos.list` to verify embeddability (`status.embeddable == True`), minimum duration, view count, and active licensing.
+  - **168-Hour SQLite Caching**: Responses are stored in local SQLite cache (`YOUTUBE_CACHE_TTL_HOURS=168`) to conserve API quotas and enable offline repeat loads.
+  - **Graceful Search Fallback**: If the API key is missing or quota is exhausted, generates direct verified search deep-links (`https://www.youtube.com/results?search_query=...`) so students are never stranded.
+  - **Frontend Integration**: Auto-mounted full-width drawer in both Theater and Split modes with embedded responsive player and channel metadata.
+- **Full Lesson MP4 Video Exporter (`POST /api/lesson/{session_id}/export`, `POST /api/video/generate`)**:
+  - **Parallel Scene Synthesis**: Renders individual lesson segments in parallel using Pillow, matplotlib, and local FFmpeg.
+  - **Instant Stream-Copy Concatenation**: Combines rendered segment MP4s using FFmpeg stream copy (`-c copy`) without lossy re-encoding in milliseconds.
+  - **Asynchronous Status Tracking**: Monitored via `GET /api/lesson/export/{job_id}/status` with progress percentages and instant download links.
+- **Avatar providers** — D‑ID, HeyGen, Synthesia, Tavus, Colossyan, Replicate, Hedra, HuggingFace (all optional/paid) + Web Audio API Canvas Avatar fallback.
 
 **Infrastructure & Database**
 - **PostgreSQL 16 + pgvector** — Production relational and vector database with native vector similarity indexing.
