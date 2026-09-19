@@ -1,13 +1,18 @@
 import os
 import io
+from typing import TypedDict
 import matplotlib.pyplot as plt
 from matplotlib.backends.backend_pdf import PdfPages
 import pypdf
 
+class PageData(TypedDict):
+    title: str
+    sections: list[str]
+
 def generate_sample_science_pdf(output_path: str):
     os.makedirs(os.path.dirname(os.path.abspath(output_path)), exist_ok=True)
     
-    pages_data = [
+    pages_data: list[PageData] = [
         {
             "title": "Chapter 1: The Bio-Energetics of Life & Photosynthesis",
             "sections": [

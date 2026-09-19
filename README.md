@@ -228,7 +228,19 @@ npm install
 npm run dev
 ```
 
-For complete step-by-step production deployment instructions (Railway + Vercel + Supabase), see [`DEPLOY_CHECKLIST.md`](file:///DEPLOY_CHECKLIST.md).
+For complete step-by-step production deployment instructions (Railway + Vercel + Supabase), see [`docs/DEPLOYMENT.md`](docs/DEPLOYMENT.md).
+
+---
+
+## 📚 Documentation & Technical Deep-Dives
+
+| Document | Focus & Content |
+| :--- | :--- |
+| **[Project Documentation](docs/DOCUMENTATION.md)** | Full 20-section architecture, RAG design, multi-LLM failover, sandbox security, and demo walkthrough script. |
+| **[Deployment & Production Guide](docs/DEPLOYMENT.md)** | Step-by-step guide for Supabase (DB + pgvector), Railway (FastAPI + FFmpeg), and Vercel (Next.js 15). |
+| **[Feasibility & Viability Analysis](docs/FEASIBILITY_AND_VIABILITY.md)** | Architectural risk mitigation, halluncination safeguards, unit economics ($0.002/lesson), and scaling pathway. |
+| **[Technical Workflows & Decision Trees](docs/TECHNICAL_WORKFLOW_AND_DECISION_TREES.md)** | 10-state pedagogical state machine, misconception diagnosis trees, and error recovery protocols. |
+| **[Feature & Provider Status](docs/FEATURE_STATUS.md)** | Comprehensive status audit of all integrated providers (Gemini, Groq, Anthropic, ElevenLabs, Deepgram, Piper). |
 
 ---
 
