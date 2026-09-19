@@ -1,0 +1,131 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1280" height="820" viewBox="0 0 1280 820" font-family="'Segoe UI', Arial, sans-serif">
+  <defs>
+    <linearGradient id="bg" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#f8fafc"/>
+      <stop offset="1" stop-color="#eef2f7"/>
+    </linearGradient>
+    <marker id="arrow" markerWidth="10" markerHeight="10" refX="8" refY="3" orient="auto" markerUnits="strokeWidth">
+      <path d="M0,0 L8,3 L0,6 Z" fill="#475569"/>
+    </marker>
+    <filter id="shadow" x="-20%" y="-20%" width="140%" height="140%">
+      <feDropShadow dx="0" dy="2" stdDeviation="3" flood-color="#0f172a" flood-opacity="0.15"/>
+    </filter>
+  </defs>
+
+  <rect width="1280" height="820" fill="url(#bg)"/>
+
+  <!-- Title -->
+  <text x="640" y="46" text-anchor="middle" font-size="30" font-weight="700" fill="#0f172a">Sahayak AI Teacher — System Architecture</text>
+  <text x="640" y="74" text-anchor="middle" font-size="16" fill="#64748b">Adaptive, document-grounded AI teaching pipeline</text>
+
+  <!-- ===================== CLIENT LAYER ===================== -->
+  <rect x="60" y="105" width="1160" height="120" rx="14" fill="#eff6ff" stroke="#bfdbfe" stroke-width="1.5"/>
+  <text x="80" y="132" font-size="15" font-weight="700" fill="#1d4ed8" letter-spacing="1">CLIENT  ·  Next.js + React (TypeScript)</text>
+
+  <g filter="url(#shadow)">
+    <rect x="90" y="146" width="260" height="62" rx="10" fill="#ffffff" stroke="#93c5fd" stroke-width="1.5"/>
+    <text x="220" y="172" text-anchor="middle" font-size="15" font-weight="600" fill="#1e293b">Upload / Topic Input</text>
+    <text x="220" y="192" text-anchor="middle" font-size="12.5" fill="#64748b">PDF · DOCX · PPTX · text</text>
+  </g>
+  <g filter="url(#shadow)">
+    <rect x="510" y="146" width="260" height="62" rx="10" fill="#ffffff" stroke="#93c5fd" stroke-width="1.5"/>
+    <text x="640" y="172" text-anchor="middle" font-size="15" font-weight="600" fill="#1e293b">Teaching Video Player</text>
+    <text x="640" y="192" text-anchor="middle" font-size="12.5" fill="#64748b">visuals · captions · voice</text>
+  </g>
+  <g filter="url(#shadow)">
+    <rect x="930" y="146" width="260" height="62" rx="10" fill="#ffffff" stroke="#93c5fd" stroke-width="1.5"/>
+    <text x="1060" y="172" text-anchor="middle" font-size="15" font-weight="600" fill="#1e293b">Interaction &amp; Report</text>
+    <text x="1060" y="192" text-anchor="middle" font-size="12.5" fill="#64748b">answers · quiz · mastery</text>
+  </g>
+
+  <!-- arrow client -> api -->
+  <line x1="640" y1="225" x2="640" y2="258" stroke="#475569" stroke-width="2" marker-end="url(#arrow)"/>
+  <text x="655" y="248" font-size="12.5" fill="#64748b">REST / SSE (HTTPS)</text>
+
+  <!-- ===================== API LAYER ===================== -->
+  <rect x="60" y="262" width="1160" height="86" rx="14" fill="#f0fdf4" stroke="#bbf7d0" stroke-width="1.5"/>
+  <text x="80" y="289" font-size="15" font-weight="700" fill="#15803d" letter-spacing="1">API GATEWAY  ·  FastAPI (stateless, 98 routes)</text>
+  <g font-size="13" fill="#166534">
+    <rect x="90" y="300" width="150" height="34" rx="8" fill="#ffffff" stroke="#86efac"/><text x="165" y="322" text-anchor="middle">/documents</text>
+    <rect x="255" y="300" width="150" height="34" rx="8" fill="#ffffff" stroke="#86efac"/><text x="330" y="322" text-anchor="middle">/lesson</text>
+    <rect x="420" y="300" width="150" height="34" rx="8" fill="#ffffff" stroke="#86efac"/><text x="495" y="322" text-anchor="middle">/interact</text>
+    <rect x="585" y="300" width="150" height="34" rx="8" fill="#ffffff" stroke="#86efac"/><text x="660" y="322" text-anchor="middle">/assess</text>
+    <rect x="750" y="300" width="150" height="34" rx="8" fill="#ffffff" stroke="#86efac"/><text x="825" y="322" text-anchor="middle">/report</text>
+    <rect x="915" y="300" width="150" height="34" rx="8" fill="#ffffff" stroke="#86efac"/><text x="990" y="322" text-anchor="middle">/media</text>
+    <rect x="1080" y="300" width="110" height="34" rx="8" fill="#ffffff" stroke="#86efac"/><text x="1135" y="322" text-anchor="middle">/profile</text>
+  </g>
+
+  <!-- arrow api -> core -->
+  <line x1="640" y1="348" x2="640" y2="380" stroke="#475569" stroke-width="2" marker-end="url(#arrow)"/>
+
+  <!-- ===================== CORE ENGINE ===================== -->
+  <rect x="60" y="384" width="1160" height="196" rx="14" fill="#fff7ed" stroke="#fed7aa" stroke-width="1.5"/>
+  <text x="80" y="411" font-size="15" font-weight="700" fill="#c2410c" letter-spacing="1">CORE ENGINE  ·  Teacher Agent (state machine)</text>
+
+  <!-- pipeline states -->
+  <g font-size="12.5" font-weight="600">
+    <rect x="90" y="424" width="132" height="46" rx="9" fill="#ffffff" stroke="#fdba74"/><text x="156" y="446" text-anchor="middle" fill="#7c2d12">Understand</text><text x="156" y="462" text-anchor="middle" font-size="10.5" fill="#9a3412">parse intent</text>
+    <rect x="238" y="424" width="132" height="46" rx="9" fill="#ffffff" stroke="#fdba74"/><text x="304" y="446" text-anchor="middle" fill="#7c2d12">Plan</text><text x="304" y="462" text-anchor="middle" font-size="10.5" fill="#9a3412">grounded lesson</text>
+    <rect x="386" y="424" width="132" height="46" rx="9" fill="#ffffff" stroke="#fdba74"/><text x="452" y="446" text-anchor="middle" fill="#7c2d12">Explain</text><text x="452" y="462" text-anchor="middle" font-size="10.5" fill="#9a3412">teach segment</text>
+    <rect x="534" y="424" width="132" height="46" rx="9" fill="#ffffff" stroke="#fdba74"/><text x="600" y="446" text-anchor="middle" fill="#7c2d12">Question</text><text x="600" y="462" text-anchor="middle" font-size="10.5" fill="#9a3412">checkpoint</text>
+    <rect x="682" y="424" width="132" height="46" rx="9" fill="#ffffff" stroke="#fdba74"/><text x="748" y="446" text-anchor="middle" fill="#7c2d12">Evaluate</text><text x="748" y="462" text-anchor="middle" font-size="10.5" fill="#9a3412">classify answer</text>
+    <rect x="830" y="424" width="132" height="46" rx="9" fill="#fee2e2" stroke="#f87171"/><text x="896" y="446" text-anchor="middle" fill="#991b1b">Adapt</text><text x="896" y="462" text-anchor="middle" font-size="10.5" fill="#b91c1c">re-teach</text>
+    <rect x="978" y="424" width="102" height="46" rx="9" fill="#ffffff" stroke="#fdba74"/><text x="1029" y="446" text-anchor="middle" fill="#7c2d12">Assess</text><text x="1029" y="462" text-anchor="middle" font-size="10.5" fill="#9a3412">quiz</text>
+    <rect x="1096" y="424" width="94" height="46" rx="9" fill="#ffffff" stroke="#fdba74"/><text x="1143" y="446" text-anchor="middle" fill="#7c2d12">Report</text><text x="1143" y="462" text-anchor="middle" font-size="10.5" fill="#9a3412">mastery</text>
+  </g>
+  <!-- adapt loop back -->
+  <path d="M896,470 C896,496 600,496 600,472" fill="none" stroke="#dc2626" stroke-width="2" stroke-dasharray="5,4" marker-end="url(#arrow)"/>
+  <text x="748" y="510" text-anchor="middle" font-size="11.5" font-style="italic" fill="#dc2626">misconception → fresh analogy + new visual</text>
+
+  <!-- service sub-boxes -->
+  <g font-size="12.5">
+    <rect x="90" y="524" width="255" height="42" rx="9" fill="#ffffff" stroke="#fdba74"/><text x="217" y="550" text-anchor="middle" font-weight="600" fill="#7c2d12">RAG Retrieval + Citations</text>
+    <rect x="360" y="524" width="255" height="42" rx="9" fill="#ffffff" stroke="#fdba74"/><text x="487" y="550" text-anchor="middle" font-weight="600" fill="#7c2d12">Visual + Video (FFmpeg)</text>
+    <rect x="630" y="524" width="255" height="42" rx="9" fill="#ffffff" stroke="#fdba74"/><text x="757" y="550" text-anchor="middle" font-weight="600" fill="#7c2d12">Voice (TTS + STT)</text>
+    <rect x="900" y="524" width="290" height="42" rx="9" fill="#ffffff" stroke="#fdba74"/><text x="1045" y="550" text-anchor="middle" font-weight="600" fill="#7c2d12">Assessment + Evaluator</text>
+  </g>
+
+  <!-- arrows core -> external + data -->
+  <line x1="360" y1="580" x2="360" y2="640" stroke="#475569" stroke-width="2" marker-end="url(#arrow)"/>
+  <line x1="920" y1="580" x2="920" y2="640" stroke="#475569" stroke-width="2" marker-end="url(#arrow)"/>
+
+  <!-- ===================== EXTERNAL AI ===================== -->
+  <rect x="60" y="644" width="620" height="140" rx="14" fill="#faf5ff" stroke="#e9d5ff" stroke-width="1.5"/>
+  <text x="80" y="671" font-size="15" font-weight="700" fill="#7e22ce" letter-spacing="1">AI PROVIDERS  ·  auto-failover</text>
+  <g filter="url(#shadow)">
+    <rect x="90" y="686" width="180" height="80" rx="10" fill="#ffffff" stroke="#d8b4fe" stroke-width="1.5"/>
+    <text x="180" y="716" text-anchor="middle" font-size="14" font-weight="600" fill="#581c87">Language Models</text>
+    <text x="180" y="738" text-anchor="middle" font-size="11.5" fill="#7e22ce">3-provider cascade</text>
+    <text x="180" y="754" text-anchor="middle" font-size="11.5" fill="#7e22ce">+ offline fallback</text>
+  </g>
+  <g filter="url(#shadow)">
+    <rect x="290" y="686" width="180" height="80" rx="10" fill="#ffffff" stroke="#d8b4fe" stroke-width="1.5"/>
+    <text x="380" y="716" text-anchor="middle" font-size="14" font-weight="600" fill="#581c87">Embeddings</text>
+    <text x="380" y="738" text-anchor="middle" font-size="11.5" fill="#7e22ce">RAG vectors +</text>
+    <text x="380" y="754" text-anchor="middle" font-size="11.5" fill="#7e22ce">deterministic fallback</text>
+  </g>
+  <g filter="url(#shadow)">
+    <rect x="490" y="686" width="170" height="80" rx="10" fill="#ffffff" stroke="#d8b4fe" stroke-width="1.5"/>
+    <text x="575" y="716" text-anchor="middle" font-size="14" font-weight="600" fill="#581c87">Voice APIs</text>
+    <text x="575" y="738" text-anchor="middle" font-size="11.5" fill="#7e22ce">neural TTS + STT</text>
+    <text x="575" y="754" text-anchor="middle" font-size="11.5" fill="#7e22ce">7 languages</text>
+  </g>
+
+  <!-- ===================== DATA LAYER ===================== -->
+  <rect x="700" y="644" width="520" height="140" rx="14" fill="#f1f5f9" stroke="#cbd5e1" stroke-width="1.5"/>
+  <text x="720" y="671" font-size="15" font-weight="700" fill="#334155" letter-spacing="1">DATA LAYER</text>
+  <g filter="url(#shadow)">
+    <rect x="730" y="686" width="220" height="80" rx="10" fill="#ffffff" stroke="#cbd5e1" stroke-width="1.5"/>
+    <text x="840" y="716" text-anchor="middle" font-size="14" font-weight="600" fill="#1e293b">Database</text>
+    <text x="840" y="738" text-anchor="middle" font-size="11.5" fill="#64748b">SQLite → PostgreSQL</text>
+    <text x="840" y="754" text-anchor="middle" font-size="11.5" fill="#64748b">sessions · attempts · reports</text>
+  </g>
+  <g filter="url(#shadow)">
+    <rect x="970" y="686" width="220" height="80" rx="10" fill="#ffffff" stroke="#cbd5e1" stroke-width="1.5"/>
+    <text x="1080" y="716" text-anchor="middle" font-size="14" font-weight="600" fill="#1e293b">Media &amp; Doc Store</text>
+    <text x="1080" y="738" text-anchor="middle" font-size="11.5" fill="#64748b">generated video / audio</text>
+    <text x="1080" y="754" text-anchor="middle" font-size="11.5" fill="#64748b">uploaded chapters</text>
+  </g>
+
+  <text x="640" y="806" text-anchor="middle" font-size="12" fill="#94a3b8">Containerized (Docker) · stateless API scales horizontally</text>
+</svg>
