@@ -689,6 +689,21 @@ export const api = {
     return `${API_BASE_URL}/lesson/export/${jobId}/download`;
   },
 
+  // Standalone / Accelerated Video Generation (Requirement 1-7)
+  generateVideo: async (req: VideoGenerateRequest): Promise<VideoGenerateResponse> => {
+    const res = await authFetch(`${API_BASE_URL}/video/generate`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(req),
+    });
+    return handleApiResponse<VideoGenerateResponse>(res, "Failed to start video lecture generation");
+  },
+
+  getVideoStatus: async (jobId: string): Promise<VideoStatusResponse> => {
+    const res = await authFetch(`${API_BASE_URL}/video/status/${jobId}`);
+    return handleApiResponse<VideoStatusResponse>(res, "Failed to fetch video generation status");
+  },
+
   // --- Advanced Study Tools (Requirement 18) ---
 
   // 1. Teacher Personalities
@@ -839,6 +854,41 @@ export const api = {
   },
 };
 
+export interface VideoStepProgress {
+  name: string;
+  status: "pending" | "processing" | "completed" | "failed";
+  detail?: string;
+}
+
+export interface VideoGenerateRequest {
+  topic?: string;
+  session_id?: string;
+  mode?: "demo" | "full";
+  language?: string;
+  visual_type?: string;
+}
+
+export interface VideoGenerateResponse {
+  job_id: string;
+  status: "processing" | "queued" | "completed" | "failed";
+  mode: "demo" | "full";
+  session_id?: string;
+  message?: string;
+}
+
+export interface VideoStatusResponse {
+  job_id: string;
+  status: "queued" | "processing" | "completed" | "failed";
+  progress: number;
+  mode?: "demo" | "full";
+  current_step?: string;
+  steps: VideoStepProgress[];
+  video_url?: string;
+  error_message?: string;
+  session_id?: string;
+  duration_sec?: number;
+}
+
 export interface ExportJobResponse {
   job_id: string;
   session_id: string;
@@ -855,6 +905,8 @@ export interface ExportJobStatusResponse {
   progress: number;
   video_url?: string;
   error_message?: string;
+  current_step?: string;
+  steps?: VideoStepProgress[];
   created_at?: string;
   updated_at?: string;
 }

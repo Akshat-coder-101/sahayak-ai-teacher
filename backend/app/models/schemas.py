@@ -397,6 +397,37 @@ class LearningPath(BaseModel):
     prerequisite_gaps: List[str] = Field(default_factory=list)
 
 # --- Video Export Job Schemas ---
+class VideoStepProgress(BaseModel):
+    name: str
+    status: str = "pending" # pending | processing | completed | failed
+    detail: Optional[str] = None
+
+class VideoGenerateRequest(BaseModel):
+    topic: Optional[str] = None
+    session_id: Optional[str] = None
+    mode: Optional[str] = "demo" # "demo" (2-3 min, 3-4 scenes) or "full" (15 min, 10-15 scenes)
+    language: Optional[str] = "en"
+    visual_type: Optional[str] = "labeled-diagram"
+
+class VideoGenerateResponse(BaseModel):
+    job_id: str
+    status: str
+    mode: str = "demo"
+    session_id: Optional[str] = None
+    message: Optional[str] = None
+
+class VideoStatusResponse(BaseModel):
+    job_id: str
+    status: str # queued | processing | completed | failed
+    progress: int = 0
+    mode: Optional[str] = "demo"
+    current_step: Optional[str] = None
+    steps: List[VideoStepProgress] = Field(default_factory=list)
+    video_url: Optional[str] = None
+    error_message: Optional[str] = None
+    session_id: Optional[str] = None
+    duration_sec: Optional[float] = None
+
 class ExportJobResponse(BaseModel):
     job_id: str
     session_id: str
@@ -412,6 +443,8 @@ class ExportJobStatusResponse(BaseModel):
     progress: int
     video_url: Optional[str] = None
     error_message: Optional[str] = None
+    current_step: Optional[str] = None
+    steps: List[VideoStepProgress] = Field(default_factory=list)
     created_at: Optional[datetime] = None
     updated_at: Optional[datetime] = None
 

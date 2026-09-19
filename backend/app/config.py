@@ -73,6 +73,8 @@ class Settings(BaseSettings):
     # Media & Storage
     MEDIA_DIR: str = os.getenv("MEDIA_DIR", "generated_media")
     DOC_STORAGE_DIR: str = os.getenv("DOC_STORAGE_DIR", "uploaded_docs")
+    VIDEO_MODE: str = os.getenv("VIDEO_MODE", "demo")  # "demo" (2-3 min, 3-4 scenes) or "full" (15 min, 10-15 scenes)
+    VIDEO_CACHE_DIR: str = os.getenv("VIDEO_CACHE_DIR", "generated_media/cache")
     
     # App & CORS
     FRONTEND_URL: str = os.getenv("FRONTEND_URL", "")

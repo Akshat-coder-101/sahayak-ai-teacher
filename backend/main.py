@@ -22,7 +22,7 @@ from contextlib import asynccontextmanager
 from app.config import settings
 from app.database import init_db, SessionLocal, DBUser, DBLearnerProfile
 from app.services.auth import get_current_user, get_password_hash
-from app.api import ingest, lesson, interact, assess, report, profile, learning_path, media, sandbox, health, videos, documents, study_tools, auth
+from app.api import ingest, lesson, interact, assess, report, profile, learning_path, media, sandbox, health, videos, documents, study_tools, auth, video
 
 logger = logging.getLogger("sahayak.main")
 logging.basicConfig(level=logging.INFO, format="%(asctime)s [%(levelname)s] %(name)s: %(message)s")
@@ -146,7 +146,7 @@ for open_router in [auth, health, media, learning_path]:
     app.include_router(open_router.router)
 
 # Register Protected API Routers (Protected by JWT Authentication)
-protected_routers = [ingest, lesson, interact, assess, report, profile, sandbox, videos, documents, study_tools]
+protected_routers = [ingest, lesson, interact, assess, report, profile, sandbox, videos, documents, study_tools, video]
 for router_module in protected_routers:
     app.include_router(router_module.router, prefix=settings.API_PREFIX, dependencies=[Depends(get_current_user)])
     app.include_router(router_module.router, dependencies=[Depends(get_current_user)])

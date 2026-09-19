@@ -21,6 +21,9 @@ import {
   Download,
   Film,
   Loader2,
+  CheckCircle2,
+  Zap,
+  PlayCircle,
   X
 } from "lucide-react";
 import Link from "next/link";
@@ -47,6 +50,7 @@ export default function LessonPage() {
   const [exportJob, setExportJob] = useState<ExportJobStatusResponse | null>(null);
   const [isStartingExport, setIsStartingExport] = useState<boolean>(false);
   const [exportError, setExportError] = useState<string | null>(null);
+  const [videoMode, setVideoMode] = useState<"demo" | "full">("demo");
   const pollingRef = useRef<NodeJS.Timeout | null>(null);
 
   useEffect(() => {
@@ -152,29 +156,52 @@ export default function LessonPage() {
   };
 
   // Video Export Handler & Polling
-  const handleStartExport = async () => {
+  const handleStartExport = async (overrideMode?: "demo" | "full") => {
     if (!lessonPlan) return;
+    const targetMode = overrideMode || videoMode;
     try {
       setIsStartingExport(true);
       setExportError(null);
       setIsExportModalOpen(true);
       
-      const jobRes = await api.exportLessonVideo(lessonPlan.session_id);
+      const jobRes = await api.generateVideo({
+        session_id: lessonPlan.session_id,
+        topic: lessonPlan.topic,
+        mode: targetMode,
+        language: lessonPlan.language || "en"
+      });
+
       setExportJob({
         job_id: jobRes.job_id,
-        session_id: jobRes.session_id,
+        session_id: jobRes.session_id || lessonPlan.session_id,
         status: jobRes.status,
-        progress: jobRes.progress,
-        video_url: jobRes.video_url,
-        error_message: jobRes.error_message
+        progress: 5,
+        current_step: "Synthesizing lesson plan & multi-scene blueprints...",
+        steps: [
+          { name: "Synthesize Lesson Plan", status: "completed" },
+          { name: "RAG Grounding & Visual Blueprints", status: "processing" },
+          { name: "Multi-Scene Generation", status: "pending" },
+          { name: "FFmpeg Stream Composition", status: "pending" }
+        ],
+        video_url: undefined,
+        error_message: undefined
       });
 
       if (pollingRef.current) clearInterval(pollingRef.current);
       
       pollingRef.current = setInterval(async () => {
         try {
-          const statusRes = await api.getExportJobStatus(jobRes.job_id);
-          setExportJob(statusRes);
+          const statusRes = await api.getVideoStatus(jobRes.job_id);
+          setExportJob({
+            job_id: statusRes.job_id,
+            session_id: statusRes.session_id || lessonPlan.session_id,
+            status: statusRes.status,
+            progress: statusRes.progress,
+            video_url: statusRes.video_url,
+            error_message: statusRes.error_message,
+            current_step: statusRes.current_step,
+            steps: statusRes.steps
+          });
           if (statusRes.status === "completed" || statusRes.status === "failed") {
             if (pollingRef.current) {
               clearInterval(pollingRef.current);
@@ -184,7 +211,7 @@ export default function LessonPage() {
         } catch (pollErr: any) {
           console.error("Export poll error:", pollErr);
         }
-      }, 1500);
+      }, 1000);
 
     } catch (err: any) {
       setExportError(err.message || "Failed to start export job");
@@ -268,7 +295,7 @@ export default function LessonPage() {
         <div className="flex items-center gap-2">
           {/* Export Lesson MP4 button */}
           <button
-            onClick={handleStartExport}
+            onClick={() => handleStartExport()}
             disabled={isStartingExport}
             className="px-3 py-1.5 rounded bg-slate-900 text-white hover:bg-black transition-colors text-xs flex items-center gap-1.5 font-medium shadow-xs disabled:opacity-50"
             title="Export full lesson as MP4 video"
@@ -427,31 +454,109 @@ export default function LessonPage() {
                 <Film className="w-5 h-5" />
               </div>
               <div>
-                <h3 className="text-base font-bold text-ink-primary">Export Lesson MP4</h3>
-                <p className="text-xs text-ink-muted">Synthesizing full multi-segment lesson video</p>
+                <h3 className="text-base font-bold text-ink-primary">AI Lecture Video Synthesis</h3>
+                <p className="text-xs text-ink-muted">Accelerated multi-scene pipeline with burned-in visuals & subtitles</p>
               </div>
             </div>
+
+            {/* Mode Selector (When not actively processing or before start) */}
+            {(!exportJob || exportJob.status === "completed" || exportJob.status === "failed") && (
+              <div className="space-y-2 p-3 rounded-lg bg-slate-50 border border-slate-200">
+                <span className="text-[11px] font-bold text-slate-600 uppercase tracking-wider block">
+                  Select Video Generation Mode
+                </span>
+                <div className="grid grid-cols-2 gap-2">
+                  <button
+                    type="button"
+                    onClick={() => setVideoMode("demo")}
+                    className={`p-2.5 rounded-md text-left transition-all border ${
+                      videoMode === "demo"
+                        ? "bg-white border-primary text-primary shadow-xs ring-1 ring-primary/30"
+                        : "bg-white/60 border-slate-200 text-slate-700 hover:bg-white"
+                    }`}
+                  >
+                    <div className="flex items-center gap-1 font-bold text-xs">
+                      <Zap className="w-3.5 h-3.5 text-amber-500" />
+                      <span>Quick Demo</span>
+                    </div>
+                    <p className="text-[10px] text-slate-500 mt-0.5 leading-tight">
+                      ~2-3 min content · 3 key scenes · Fast ~5-10s render
+                    </p>
+                  </button>
+
+                  <button
+                    type="button"
+                    onClick={() => setVideoMode("full")}
+                    className={`p-2.5 rounded-md text-left transition-all border ${
+                      videoMode === "full"
+                        ? "bg-white border-primary text-primary shadow-xs ring-1 ring-primary/30"
+                        : "bg-white/60 border-slate-200 text-slate-700 hover:bg-white"
+                    }`}
+                  >
+                    <div className="flex items-center gap-1 font-bold text-xs">
+                      <Film className="w-3.5 h-3.5 text-sky-500" />
+                      <span>Full Lecture</span>
+                    </div>
+                    <p className="text-[10px] text-slate-500 mt-0.5 leading-tight">
+                      15 min comprehensive lecture · 10-15 deep scenes
+                    </p>
+                  </button>
+                </div>
+
+                {exportJob?.status !== "processing" && (
+                  <button
+                    type="button"
+                    onClick={() => handleStartExport(videoMode)}
+                    disabled={isStartingExport}
+                    className="w-full mt-2 py-2 px-3 rounded-md bg-black hover:bg-neutral-800 text-white font-bold text-xs flex items-center justify-center gap-1.5 transition-colors"
+                  >
+                    {isStartingExport ? (
+                      <>
+                        <Loader2 className="w-3.5 h-3.5 animate-spin" />
+                        <span>Enqueuing Generation...</span>
+                      </>
+                    ) : (
+                      <>
+                        <Sparkles className="w-3.5 h-3.5 text-amber-400" />
+                        <span>{exportJob?.status === "completed" ? "Re-Generate in Selected Mode" : "Start Video Generation"}</span>
+                      </>
+                    )}
+                  </button>
+                )}
+              </div>
+            )}
 
             {/* Content State */}
             {exportError ? (
               <div className="p-3.5 rounded-lg bg-red-50 border border-red-200 text-xs text-red-700 flex items-start gap-2">
                 <AlertCircle className="w-4 h-4 text-red-600 shrink-0 mt-0.5" />
                 <div>
-                  <p className="font-semibold">Export Failed</p>
+                  <p className="font-semibold">Generation Failed</p>
                   <p className="mt-0.5 text-red-600">{exportError}</p>
                 </div>
               </div>
             ) : exportJob?.status === "completed" ? (
               <div className="space-y-4">
-                <div className="p-4 rounded-lg bg-emerald-50 border border-emerald-200 text-center space-y-2">
-                  <div className="w-9 h-9 rounded-full bg-emerald-100 text-emerald-600 flex items-center justify-center mx-auto">
-                    <Check className="w-5 h-5" />
+                <div className="p-3.5 rounded-lg bg-emerald-50 border border-emerald-200 text-center space-y-1.5">
+                  <div className="w-8 h-8 rounded-full bg-emerald-100 text-emerald-600 flex items-center justify-center mx-auto">
+                    <Check className="w-4 h-4" />
                   </div>
-                  <p className="text-sm font-bold text-emerald-900">Lesson Video Ready!</p>
-                  <p className="text-xs text-emerald-700">
-                    Full audio speech, progressive visual reveal, and burned-in subtitles stitched.
+                  <p className="text-sm font-bold text-emerald-900">Lecture Video Synthesized!</p>
+                  <p className="text-[11px] text-emerald-700">
+                    Audio narration, blackboard diagrams, and burned-in subtitles stitched with lossless stream copy.
                   </p>
                 </div>
+
+                {/* Video Player */}
+                {exportJob.video_url && (
+                  <div className="rounded-lg overflow-hidden border border-slate-200 bg-black aspect-video shadow-xs">
+                    <video
+                      src={exportJob.video_url}
+                      controls
+                      className="w-full h-full object-contain"
+                    />
+                  </div>
+                )}
 
                 <a
                   href={api.getExportDownloadUrl(exportJob.job_id)}
@@ -459,14 +564,14 @@ export default function LessonPage() {
                   className="w-full py-2.5 px-4 rounded-lg bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-xs flex items-center justify-center gap-2 transition-colors shadow-xs"
                 >
                   <Download className="w-4 h-4" />
-                  <span>Download MP4 Video</span>
+                  <span>Download MP4 Lecture Video</span>
                 </a>
               </div>
             ) : exportJob?.status === "failed" ? (
               <div className="p-3.5 rounded-lg bg-amber-50 border border-amber-200 text-xs text-amber-800 space-y-1">
                 <p className="font-bold flex items-center gap-1.5 text-amber-900">
                   <AlertCircle className="w-4 h-4 text-amber-600" />
-                  Rendering Diagnostic
+                  Synthesis Diagnostic
                 </p>
                 <p>{exportJob.error_message || "Video rendering could not be completed."}</p>
               </div>
@@ -475,13 +580,13 @@ export default function LessonPage() {
                 {/* Progress bar */}
                 <div className="space-y-2">
                   <div className="flex items-center justify-between text-xs">
-                    <span className="font-medium text-ink-primary flex items-center gap-1.5">
+                    <span className="font-semibold text-ink-primary flex items-center gap-1.5">
                       <Loader2 className="w-3.5 h-3.5 animate-spin text-primary" />
-                      {exportJob?.status === "queued" ? "Queued in background..." : "Rendering lesson scenes..."}
+                      <span>{exportJob?.current_step || (exportJob?.status === "queued" ? "Queued in background..." : "Synthesizing lecture scenes...")}</span>
                     </span>
-                    <span className="font-bold font-mono text-primary">{exportJob?.progress || 5}%</span>
+                    <span className="font-extrabold font-mono text-primary">{exportJob?.progress || 5}%</span>
                   </div>
-                  <div className="w-full h-2 bg-slate-100 rounded-full overflow-hidden">
+                  <div className="w-full h-2.5 bg-slate-100 rounded-full overflow-hidden p-0.5 border border-slate-200">
                     <div
                       className="h-full bg-primary transition-all duration-300 rounded-full"
                       style={{ width: `${Math.max(5, exportJob?.progress || 5)}%` }}
@@ -489,8 +594,41 @@ export default function LessonPage() {
                   </div>
                 </div>
 
-                <p className="text-[11px] text-ink-muted text-center">
-                  Generating progressive blackboard scenes, synchronized audio, and stitching timeline tracks.
+                {/* Granular Step Checklist */}
+                {exportJob?.steps && exportJob.steps.length > 0 && (
+                  <div className="space-y-2 max-h-44 overflow-y-auto p-3 rounded-lg bg-slate-50 border border-slate-200">
+                    <span className="text-[10px] font-bold text-slate-500 uppercase tracking-wider block mb-1">
+                      Scene-By-Scene Generation Steps
+                    </span>
+                    <div className="space-y-1.5">
+                      {exportJob.steps.map((step, idx) => (
+                        <div key={idx} className="flex items-center gap-2 text-xs">
+                          {step.status === "completed" ? (
+                            <CheckCircle2 className="w-3.5 h-3.5 text-emerald-600 shrink-0" />
+                          ) : step.status === "processing" ? (
+                            <Loader2 className="w-3.5 h-3.5 text-primary animate-spin shrink-0" />
+                          ) : (
+                            <div className="w-3.5 h-3.5 rounded-full border-2 border-slate-300 shrink-0" />
+                          )}
+                          <span
+                            className={
+                              step.status === "completed"
+                                ? "text-slate-800 font-medium line-through opacity-80"
+                                : step.status === "processing"
+                                ? "text-primary font-bold"
+                                : "text-slate-400"
+                            }
+                          >
+                            {step.name}
+                          </span>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                )}
+
+                <p className="text-[11px] text-ink-muted text-center leading-relaxed">
+                  Generating progressive blackboard scenes, synchronized audio narration, and lossless timeline stream stitching.
                 </p>
               </div>
             )}
