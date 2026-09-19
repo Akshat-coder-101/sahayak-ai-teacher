@@ -13,6 +13,7 @@ class Settings(BaseSettings):
     # App
     PROJECT_NAME: str = "Sahayak AI Teacher"
     VERSION: str = "1.0.0"
+    ENV: str = os.getenv("ENV", os.getenv("ENVIRONMENT", "development"))
     API_PREFIX: str = "/api"
     BACKEND_PORT: int = int(os.getenv("PORT", os.getenv("BACKEND_PORT", "8000")))
     

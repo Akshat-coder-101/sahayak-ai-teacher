@@ -49,3 +49,43 @@ This document logs all baseline findings, discrepancy audits, implementation cha
 | **Absolute Claims** | Claims like "zero hallucination", "zero source degradation", "100% pass rate". | Software should use empirically grounded terminology: "measured 0% hallucinated YouTube URLs", "deterministic citation verification", etc. | Replace exaggerated absolutes with empirically validated wording backed by evaluation benchmarks. |
 
 ---
+
+## Phase 1: Production Hardening
+
+### 1. Implementation Details
+* **Production Startup Secret Enforcement (`backend/main.py`)**:
+  * In `lifespan()`, if `settings.ENV == "production"`, validates that `JWT_SECRET_KEY` is not the default dev secret and has a length $\ge 32$ characters. Otherwise, aborts startup immediately with `RuntimeError`.
+* **CORS Wildcard Filtering (`backend/main.py`)**:
+  * When `settings.ENV == "production"`, any wildcard `*` in `CORS_ORIGINS` is stripped and rejected, preventing unauthorized cross-origin credential leaks.
+* **Production Cookie Hardening (`backend/app/api/auth.py`)**:
+  * `_set_auth_cookie` sets `httponly=True`, `samesite="lax"`, and dynamically enforces `secure=True` when `settings.ENV == "production"`.
+* **Rate Limiting Engine (`backend/app/services/rate_limiter.py`)**:
+  * Implemented `SlidingWindowRateLimiter`: thread-safe in-memory sliding window rate limiter tracking client IP / `X-Forwarded-For`.
+  * Attached `auth_rate_limiter` (15 requests/min) to `/api/auth/register` and `/api/auth/login`.
+  * Attached `sandbox_rate_limiter` (25 requests/min) to `/api/sandbox/run`.
+  * Returns standard HTTP 429 Too Many Requests with canonical error JSON and `Retry-After` header.
+* **Canonical Error Header Forwarding (`backend/main.py`)**:
+  * Updated `make_canonical_error()` and `http_exception_handler()` to forward upstream exception headers (such as `Retry-After` and `WWW-Authenticate`) in all `JSONResponse` outputs.
+* **CI Workflow (`.github/workflows/ci.yml`)**:
+  * Added unified multi-job GitHub Actions pipeline:
+    1. `backend-test`: Ubuntu runner, Python 3.11, ffmpeg, DejaVu fonts, requirements installation, and `pytest tests/ -v`.
+    2. `frontend-build`: Ubuntu runner, Node.js 20, `npm install`, and `npm run build`.
+
+### 2. Verification & Test Metrics
+* **New Test Suite**: `backend/tests/test_production_hardening.py`
+  * Tests Added: **9 unit tests**
+  * Status: **9 passed, 0 failed in 34.85s**
+  * Test Breakdown:
+    * `test_production_startup_jwt_secret_validation`: Verifies startup aborts on default dev secret or $<32$ char key in production, and boots cleanly with strong key.
+    * `test_production_auth_cookie_attributes`: Verifies `HttpOnly`, `SameSite=lax`, and `Secure` attributes across environments.
+    * `test_production_cors_filters_wildcard`: Verifies `*` is filtered out in production CORS.
+    * `test_auth_rate_limiting`: Verifies 15 requests pass, 16th receives HTTP 429 with `Retry-After`.
+    * `test_sandbox_rate_limiting`: Verifies 25 requests pass, 26th receives HTTP 429.
+    * `test_upload_validation_empty_file`: Verifies 0-byte file receives HTTP 400.
+    * `test_upload_validation_wrong_extension`: Verifies `.sh` receives HTTP 400.
+    * `test_upload_validation_no_extension`: Verifies extensionless file receives HTTP 400.
+    * `test_upload_validation_oversize`: Verifies file exceeding `MAX_UPLOAD_MB` receives HTTP 400.
+* **Cumulative Test Matrix**: **99 passing tests** (90 baseline + 9 production hardening), 0 failed, 0 skipped.
+
+---
+

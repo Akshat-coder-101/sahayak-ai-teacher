@@ -27,7 +27,7 @@ from app.api import ingest, lesson, interact, assess, report, profile, learning_
 logger = logging.getLogger("sahayak.main")
 logging.basicConfig(level=logging.INFO, format="%(asctime)s [%(levelname)s] %(name)s: %(message)s")
 
-def make_canonical_error(code: str, message: str, path: str, status_code: int, details: Any = None) -> JSONResponse:
+def make_canonical_error(code: str, message: str, path: str, status_code: int, details: Any = None, headers: Optional[dict] = None) -> JSONResponse:
     """Helper to return uniform JSON error responses across the entire application."""
     content: dict = {
         "error": {
@@ -38,7 +38,7 @@ def make_canonical_error(code: str, message: str, path: str, status_code: int, d
     }
     if details:
         content["error"]["details"] = details
-    return JSONResponse(status_code=status_code, content=content)
+    return JSONResponse(status_code=status_code, content=content, headers=headers)
 
 def seed_default_users():
     """Seeds baseline learner and teacher accounts for immediate demo and test evaluation."""
@@ -92,6 +92,17 @@ async def lifespan(app: FastAPI):
     doc_dir = os.path.join(backend_dir, settings.DOC_STORAGE_DIR)
     os.makedirs(doc_dir, exist_ok=True)
     
+    # Production Hardening Validation (Phase 1)
+    is_prod = str(getattr(settings, "ENV", "development")).lower() == "production"
+    if is_prod:
+        default_dev_secret = "sahayak-insecure-secret-key-change-in-production-2026"
+        secret = getattr(settings, "JWT_SECRET_KEY", "") or ""
+        if secret == default_dev_secret or len(secret) < 32:
+            raise RuntimeError(
+                "FATAL: In production (ENV=production), JWT_SECRET_KEY cannot be the default dev value "
+                "and must be at least 32 characters long."
+            )
+
     # Startup Provider Diagnostic Report
     print("=" * 65)
     print(f"🚀  {settings.PROJECT_NAME} v{settings.VERSION} — Provider Diagnostics")
@@ -113,7 +124,7 @@ async def lifespan(app: FastAPI):
 app = FastAPI(
     title=settings.PROJECT_NAME,
     version=settings.VERSION,
-    description="Human-Like AI Educator Platform for AI Innovation Hackathon 2026",
+    description="Human-Like AI Educator Platform for Open Innovation Hackathon 2026",
     lifespan=lifespan
 )
 
@@ -133,6 +144,8 @@ if settings.CORS_ORIGINS and settings.CORS_ORIGINS.strip():
             allowed.append(cleaned)
 
 cors_origins = list(set([o for o in allowed if o]))
+if str(getattr(settings, "ENV", "development")).lower() == "production":
+    cors_origins = [o for o in cors_origins if o != "*"]
 
 app.add_middleware(
     CORSMiddleware,
@@ -206,7 +219,8 @@ async def http_exception_handler(request: Request, exc: StarletteHTTPException):
         code=code,
         message=message,
         path=request.url.path,
-        status_code=exc.status_code
+        status_code=exc.status_code,
+        headers=getattr(exc, "headers", None)
     )
 
 @app.exception_handler(RequestValidationError)

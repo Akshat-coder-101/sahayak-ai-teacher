@@ -5,6 +5,8 @@ from pydantic import BaseModel, Field
 from fastapi import APIRouter, Depends, HTTPException, status, Response, Request
 from sqlalchemy.orm import Session
 
+from ..config import settings
+from ..services.rate_limiter import auth_rate_limiter
 from ..database import get_db, DBUser, DBLearnerProfile
 from ..services.auth import (
     get_password_hash, 
@@ -73,16 +75,17 @@ class AuthTokenResponse(BaseModel):
     user: UserResponse
 
 def _set_auth_cookie(response: Response, token: str):
+    is_prod = str(getattr(settings, "ENV", "development")).lower() == "production"
     response.set_cookie(
         key="access_token",
         value=f"Bearer {token}",
         httponly=True,
         samesite="lax",
-        secure=False,  # Set to True in HTTPS/Production environments
+        secure=is_prod,  # True in production
         max_age=86400  # 24 hours
     )
 
-@router.post("/register", response_model=AuthTokenResponse, status_code=status.HTTP_201_CREATED)
+@router.post("/register", response_model=AuthTokenResponse, status_code=status.HTTP_201_CREATED, dependencies=[Depends(auth_rate_limiter)])
 def register_user(
     req: RegisterRequest, 
     response: Response, 
@@ -143,7 +146,7 @@ def register_user(
         )
     )
 
-@router.post("/login", response_model=AuthTokenResponse)
+@router.post("/login", response_model=AuthTokenResponse, dependencies=[Depends(auth_rate_limiter)])
 def login_user(
     req: LoginRequest, 
     response: Response, 
