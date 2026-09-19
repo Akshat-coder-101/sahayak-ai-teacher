@@ -69,4 +69,6 @@ backend/models/
 *.onnx
 *.onnx.json
 SIH_IMPACT_AND_BENEFITS.md
+HACKATHON_PPT_POINTS.md
+*PPT*.md
 
