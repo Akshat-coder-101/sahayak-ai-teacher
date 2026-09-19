@@ -238,3 +238,70 @@ The backend execution sandbox runs student-generated Python snippets. For maximu
    - Sockets & networking blocked (`BlockedSocket` raises `PermissionError`).
    - Forking disabled (`os.fork` monkeypatched to prevent fork bombs).
    - Scratch directories cleaned up after execution.
+
+---
+
+## 7. Cloud Deployment Guide: Supabase + Railway + Vercel
+
+This architecture separates stateful persistence, containerized compute, and edge delivery:
+
+```
++---------------------------+        +------------------------------+        +-----------------------------+
+|      Vercel (Edge)        | HTTPS  |      Railway (Compute)       | TCP    |     Supabase (Storage)      |
+|     Next.js 15 App        | -----> |      FastAPI + FFmpeg        | -----> |    PostgreSQL 17 + pgvector |
+| (NEXT_PUBLIC_API_BASE_URL)|        | (Docker, Port $PORT, Volume) |        |   (13 Migrated Tables)      |
++---------------------------+        +------------------------------+        +-----------------------------+
+```
+
+### Step 1: Database (Supabase PostgreSQL + pgvector)
+1. In the Supabase dashboard, open the **SQL Editor** and run:
+   ```sql
+   CREATE EXTENSION IF NOT EXISTS vector;
+   ```
+2. Retrieve your connection string from **Project Settings $\rightarrow$ Database $\rightarrow$ Connection URI**:
+   ```env
+   DATABASE_URL=postgresql://postgres:[YOUR-PASSWORD]@[HOST]:5432/postgres
+   ```
+3. Run migrations from your terminal or let the container execute them on first startup:
+   ```bash
+   alembic -c backend/alembic.ini upgrade head
+   ```
+
+### Step 2: Backend (Railway with Dockerfile)
+1. Log in to [railway.app](https://railway.app) and create a **New Project** $\rightarrow$ **Deploy from GitHub repo**.
+2. Select your repository: `Akshat-coder-101/sahayak-ai-teacher`.
+3. In **Settings**:
+   - **Root Directory**: `backend` (or set Dockerfile path to `backend/Dockerfile`).
+   - **Healthcheck Path**: `/health` (or `/health/ready`).
+4. In **Variables**, add:
+   ```env
+   DATABASE_URL=postgresql://postgres:[PASSWORD]@[HOST]:5432/postgres
+   JWT_SECRET_KEY=use-a-strong-random-32-char-secret-key
+   JWT_ALGORITHM=HS256
+   ACCESS_TOKEN_EXPIRE_MINUTES=1440
+   GEMINI_API_KEY=your_gemini_api_key_here
+   GEMINI_MODEL=gemini-3-flash-preview
+   GROQ_API_KEY=your_groq_api_key_here
+   GROQ_MODEL=qwen/qwen3.8-27b
+   LLM_PROVIDER_ORDER=gemini,groq,anthropic
+   EMBEDDING_PROVIDER=gemini
+   FRONTEND_URL=https://your-frontend.vercel.app
+   CORS_ORIGINS=https://your-frontend.vercel.app,http://localhost:3000
+   MEDIA_DIR=data/media
+   DOC_STORAGE_DIR=data/docs
+   ```
+5. *(Optional)* In **Volumes**, attach a persistent volume to `/app/data` to preserve generated lesson MP4s and uploaded documents across container restarts.
+6. Generate a public Railway domain (e.g. `https://sahayak-backend.up.railway.app`).
+
+### Step 3: Frontend (Vercel with Next.js 15)
+1. Log in to [vercel.com](https://vercel.com) and click **Add New Project** $\rightarrow$ Import `sahayak-ai-teacher`.
+2. Configure project settings:
+   - **Framework Preset**: Next.js
+   - **Root Directory**: `frontend`
+3. In **Environment Variables**, add:
+   ```env
+   NEXT_PUBLIC_API_BASE_URL=https://sahayak-backend.up.railway.app/api
+   NEXT_PUBLIC_APP_URL=https://your-frontend.vercel.app
+   ```
+4. Click **Deploy**. Vercel will build and deploy the application with zero configuration.
+5. Once deployed, update `FRONTEND_URL` on Railway with your live Vercel domain to ensure strict CORS compliance.

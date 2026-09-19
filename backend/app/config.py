@@ -7,13 +7,13 @@ class Settings(BaseSettings):
     PROJECT_NAME: str = "Sahayak AI Teacher"
     VERSION: str = "1.0.0"
     API_PREFIX: str = "/api"
-    BACKEND_PORT: int = 8000
+    BACKEND_PORT: int = int(os.getenv("PORT", os.getenv("BACKEND_PORT", "8000")))
     
     # LLM
     GEMINI_API_KEY: str = os.getenv("GEMINI_API_KEY", "")
-    GEMINI_MODEL: str = os.getenv("GEMINI_MODEL", "gemini-2.5-flash")
+    GEMINI_MODEL: str = os.getenv("GEMINI_MODEL", "gemini-3-flash-preview")
     GROQ_API_KEY: str = os.getenv("GROQ_API_KEY", "")
-    GROQ_MODEL: str = os.getenv("GROQ_MODEL", "llama-3.3-70b-versatile")
+    GROQ_MODEL: str = os.getenv("GROQ_MODEL", "qwen/qwen3.8-27b")
     ANTHROPIC_API_KEY: str = os.getenv("ANTHROPIC_API_KEY", "")
     ANTHROPIC_MODEL: str = os.getenv("ANTHROPIC_MODEL", "claude-3-7-sonnet-20250219")
     LLM_PROVIDER_ORDER: str = os.getenv("LLM_PROVIDER_ORDER", "gemini,groq,anthropic")
@@ -47,12 +47,14 @@ class Settings(BaseSettings):
     AVATAR_DEFAULT_ID: str = os.getenv("AVATAR_DEFAULT_ID", "amy-j37u")
     TEACHER_IMAGE_URL: str = os.getenv("TEACHER_IMAGE_URL", "")
 
-    
     # Database & Vector DB
     DATABASE_URL: str = os.getenv(
         "DATABASE_URL", 
         f"sqlite:///{os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))), 'sahayak.db').replace(os.sep, '/')}"
     )
+    if DATABASE_URL.startswith("postgres://"):
+        DATABASE_URL = DATABASE_URL.replace("postgres://", "postgresql://", 1)
+
     SUPABASE_URL: str = os.getenv("SUPABASE_URL", "")
     SUPABASE_SERVICE_ROLE_KEY: str = os.getenv("SUPABASE_SERVICE_ROLE_KEY", "")
     SUPABASE_STORAGE_BUCKET: str = os.getenv("SUPABASE_STORAGE_BUCKET", "lesson-media")
@@ -65,6 +67,8 @@ class Settings(BaseSettings):
     DOC_STORAGE_DIR: str = os.getenv("DOC_STORAGE_DIR", "uploaded_docs")
     
     # App & CORS
+    FRONTEND_URL: str = os.getenv("FRONTEND_URL", "")
+    CORS_ORIGINS: str = os.getenv("CORS_ORIGINS", "")
     NEXT_PUBLIC_APP_URL: str = os.getenv("NEXT_PUBLIC_APP_URL", "http://localhost:3000")
     DEFAULT_LANGUAGE: str = os.getenv("DEFAULT_LANGUAGE", "en")
     SUPPORTED_LANGUAGES: str = os.getenv("SUPPORTED_LANGUAGES", "en,hi,hinglish,ta,te,bn,es")
@@ -76,7 +80,7 @@ class Settings(BaseSettings):
     YOUTUBE_CACHE_TTL_HOURS: int = int(os.getenv("YOUTUBE_CACHE_TTL_HOURS", "168"))
     
     # JWT & Authentication
-    JWT_SECRET_KEY: str = os.getenv("JWT_SECRET_KEY", "sahayak-insecure-secret-key-change-in-production-2026")
+    JWT_SECRET_KEY: str = os.getenv("JWT_SECRET_KEY") or os.getenv("JWT_SECRET") or "sahayak-insecure-secret-key-change-in-production-2026"
     JWT_ALGORITHM: str = os.getenv("JWT_ALGORITHM", "HS256")
     ACCESS_TOKEN_EXPIRE_MINUTES: int = int(os.getenv("ACCESS_TOKEN_EXPIRE_MINUTES", "1440"))
 

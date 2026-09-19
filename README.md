@@ -340,6 +340,28 @@ npm run dev
 
 ---
 
+### Option C: Cloud Production Deployment (Vercel + Railway + Supabase)
+
+For a fully persistent, auto-scaling cloud deployment:
+
+1. **Database (Supabase PostgreSQL 17 + pgvector)**:
+   - Create project on [supabase.com](https://supabase.com).
+   - Run `CREATE EXTENSION IF NOT EXISTS vector;` in the SQL editor.
+   - Run migrations: `alembic -c backend/alembic.ini upgrade head`.
+2. **Backend (Railway with Dockerfile)**:
+   - Deploy from repository with Root Directory set to `backend`.
+   - Set environment variables: `DATABASE_URL=postgresql://postgres:[PASSWORD]@[HOST]:5432/postgres`, `JWT_SECRET_KEY`, `FRONTEND_URL`, `GEMINI_API_KEY`, etc.
+   - Attach a persistent volume to `/app/data` to preserve generated lesson MP4s.
+   - Railway injects `$PORT` dynamically; uvicorn binds automatically.
+3. **Frontend (Vercel)**:
+   - Deploy from repository with Root Directory set to `frontend`.
+   - Set environment variable: `NEXT_PUBLIC_API_BASE_URL=https://[YOUR-RAILWAY-BACKEND-URL]/api`.
+   - Next.js 15 automatically builds with zero configuration.
+
+*(See [DEPLOYMENT.md](DEPLOYMENT.md) for full architecture diagrams, reverse proxy configuration, and persistent volume mount guides).*
+
+---
+
 ## 🧪 12. Automated Test Suite
 
 Sahayak comes with a comprehensive, rigorous automated test suite with **85 passing tests** and **2 skipped** (which require live external cloud API keys), demonstrating 100% automated pass rate:

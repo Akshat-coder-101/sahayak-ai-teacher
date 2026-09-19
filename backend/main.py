@@ -115,13 +115,22 @@ app = FastAPI(
     lifespan=lifespan
 )
 
-# CORS Configuration with explicit allowed origins (F3)
-cors_origins = list(set([
+# CORS Configuration with configurable allowed origins (Production / Vercel / Railway)
+allowed = [
     "http://localhost:3000",
     "http://127.0.0.1:3000",
     "http://localhost:8000",
     settings.NEXT_PUBLIC_APP_URL.rstrip("/")
-]))
+]
+if settings.FRONTEND_URL and settings.FRONTEND_URL.strip():
+    allowed.append(settings.FRONTEND_URL.strip().rstrip("/"))
+if settings.CORS_ORIGINS and settings.CORS_ORIGINS.strip():
+    for origin in settings.CORS_ORIGINS.split(","):
+        cleaned = origin.strip().rstrip("/")
+        if cleaned:
+            allowed.append(cleaned)
+
+cors_origins = list(set([o for o in allowed if o]))
 
 app.add_middleware(
     CORSMiddleware,
@@ -239,6 +248,26 @@ def root():
 @app.get("/api/health")
 def health_status():
     return {"status": "healthy", "service": "sahayak-backend"}
+
+@app.get("/health/ready")
+@app.get("/api/health/ready")
+def health_readiness():
+    from sqlalchemy import text
+    db = SessionLocal()
+    try:
+        db.execute(text("SELECT 1;"))
+        db_ok = True
+    except Exception as e:
+        logger.warning(f"[Health] Database readiness check failed: {e}")
+        db_ok = False
+    finally:
+        db.close()
+    
+    return {
+        "status": "ready" if db_ok else "degraded",
+        "database": "connected" if db_ok else "unavailable",
+        "database_type": "postgresql" if settings.is_postgres else "sqlite"
+    }
 
 if __name__ == "__main__":
     import uvicorn
