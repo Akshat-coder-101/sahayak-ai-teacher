@@ -78,6 +78,7 @@ export default function TeacherPlayer({
   const [misconceptionData, setMisconceptionData] = useState<InteractionResponse | null>(null);
   const [activeLanguage, setActiveLanguage] = useState<string>(initialSegment.language || "en");
   const [isSwitchingLang, setIsSwitchingLang] = useState<boolean>(false);
+  const [targetSwitchLang, setTargetSwitchLang] = useState<string | null>(null);
   const [naturalQuery, setNaturalQuery] = useState<string>("");
   const [feedbackMessage, setFeedbackMessage] = useState<string | null>(null);
 
@@ -582,8 +583,19 @@ export default function TeacherPlayer({
 
   // Language switch
   const handleLanguageChange = async (targetLang: string) => {
-    if (targetLang === activeLanguage) return;
+    if (targetLang === activeLanguage || isSwitchingLang) return;
+    const langNames: Record<string, string> = {
+      en: "English",
+      hi: "Hindi (हिन्दी)",
+      hinglish: "Hinglish",
+      ta: "Tamil (தமிழ்)",
+      te: "Telugu (తెలుగు)",
+      bn: "Bengali (বাংলা)",
+      es: "Spanish (Español)"
+    };
     setIsSwitchingLang(true);
+    setTargetSwitchLang(targetLang);
+    showSuccess(`Translating lesson to ${langNames[targetLang] || targetLang.toUpperCase()}...`);
     try {
       const updatedSeg = await api.switchLanguage({
         session_id: segment.session_id,
@@ -594,21 +606,13 @@ export default function TeacherPlayer({
       setSegment(updatedSeg);
       setProgressSec(0);
       setIsPlaying(true);
-      const langNames: Record<string, string> = {
-        en: "English",
-        hi: "Hindi (हिन्दी)",
-        hinglish: "Hinglish",
-        ta: "Tamil (தமிழ்)",
-        te: "Telugu (తెలుగు)",
-        bn: "Bengali (বাংলা)",
-        es: "Spanish (Español)"
-      };
-      showSuccess(`Language switched to ${langNames[targetLang] || targetLang.toUpperCase()}`);
+      showSuccess(`Lesson updated to ${langNames[targetLang] || targetLang.toUpperCase()}`);
     } catch (err: any) {
       console.error(err);
       showError(err.message || "Failed to switch audio/video language");
     } finally {
       setIsSwitchingLang(false);
+      setTargetSwitchLang(null);
     }
   };
 
@@ -771,20 +775,26 @@ export default function TeacherPlayer({
               { id: "te", label: "తెలుగు" },
               { id: "bn", label: "বাংলা" },
               { id: "es", label: "Español" },
-            ].map((lang) => (
-              <button
-                key={lang.id}
-                onClick={() => handleLanguageChange(lang.id)}
-                disabled={isSwitchingLang}
-                className={`px-2 py-0.5 rounded font-semibold transition-all text-[11px] ${
-                  activeLanguage === lang.id
-                    ? "bg-white text-primary shadow-2xs font-bold"
-                    : "text-ink-secondary hover:text-ink-primary"
-                }`}
-              >
-                {lang.label}
-              </button>
-            ))}
+            ].map((lang) => {
+              const isLoadingThis = isSwitchingLang && targetSwitchLang === lang.id;
+              return (
+                <button
+                  key={lang.id}
+                  onClick={() => handleLanguageChange(lang.id)}
+                  disabled={isSwitchingLang}
+                  className={`px-2 py-0.5 rounded font-semibold transition-all text-[11px] flex items-center gap-1 cursor-pointer ${
+                    activeLanguage === lang.id
+                      ? "bg-white text-primary shadow-2xs font-bold"
+                      : "text-ink-secondary hover:text-ink-primary hover:bg-white/50"
+                  } ${isLoadingThis ? "bg-primary/10 text-primary animate-pulse" : ""}`}
+                >
+                  {isLoadingThis && (
+                    <Loader2 className="w-3 h-3 animate-spin text-primary shrink-0" />
+                  )}
+                  <span>{isLoadingThis ? "Translating..." : lang.label}</span>
+                </button>
+              );
+            })}
           </div>
         </div>
       </div>
@@ -1478,18 +1488,21 @@ export default function TeacherPlayer({
                   onRequestSimplification={handleSliderSimplification}
                   isReteaching={isRequestingSimplification}
                 />
-
-                {/* AI-Grounded YouTube Educational Videos */}
-                <RelatedVideos
-                  topic={segment.concept}
-                  language={activeLanguage}
-                  segmentId={segment.segment_id}
-                  sessionId={segment.session_id}
-                  context={segment.on_screen_text || segment.spoken_script}
-                />
               </div>
             </div>
           )}
+
+          {/* AI-Grounded YouTube Educational Videos (Full-Width Bottom Section) */}
+          <div className="pt-2 border-t border-border/80">
+            <RelatedVideos
+              topic={segment.concept}
+              language={activeLanguage}
+              segmentId={segment.segment_id}
+              sessionId={segment.session_id}
+              context={segment.on_screen_text || segment.spoken_script}
+              defaultOpen={true}
+            />
+          </div>
         </div>
       )}
 

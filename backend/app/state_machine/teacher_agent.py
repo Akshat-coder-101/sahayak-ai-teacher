@@ -943,7 +943,8 @@ Output a JSON object with this EXACT structure:
         session_id: str, 
         segment_id: int, 
         language: Optional[str] = None, 
-        db: Optional[Session] = None
+        db: Optional[Session] = None,
+        skip_video: bool = False
     ) -> LessonSegmentRender:
         close_db = False
         if db is None:
@@ -955,7 +956,8 @@ Output a JSON object with this EXACT structure:
                 session_id=session_id,
                 segment_id=segment_id,
                 db=db,
-                language=language
+                language=language,
+                skip_video=skip_video
             )
         finally:
             if close_db and db is not None:
@@ -967,7 +969,8 @@ Output a JSON object with this EXACT structure:
         session_id: str, 
         segment_id: int, 
         db: Session,
-        language: Optional[str] = None
+        language: Optional[str] = None,
+        skip_video: bool = False
     ) -> LessonSegmentRender:
         db_sess = db.query(DBLessonSession).filter(DBLessonSession.id == session_id).first()
         if not db_sess:
@@ -1174,17 +1177,25 @@ Output JSON with:
         avatar_res = await AvatarService.generate_avatar_video(spoken_script)
         anchor_portrait = AvatarService.get_anchor_portrait_path()
 
-        # 7. Local ffmpeg MP4 video synthesis
-        video_res = await VideoService.render_segment_video(
-            segment_id=segment_id,
-            session_id=session_id,
-            script=spoken_script,
-            audio_url=audio_url,
-            visual_spec=visual_spec.model_dump(),
-            captions=captions,
-            anchor_image_path=anchor_portrait,
-            language=active_lang
-        )
+        # 7. Local ffmpeg MP4 video synthesis (skipped for fast interactive language switching)
+        if not skip_video:
+            video_res = await VideoService.render_segment_video(
+                segment_id=segment_id,
+                session_id=session_id,
+                script=spoken_script,
+                audio_url=audio_url,
+                visual_spec=visual_spec.model_dump(),
+                captions=captions,
+                anchor_image_path=anchor_portrait,
+                language=active_lang
+            )
+        else:
+            video_res = {
+                "provider": "ffmpeg_local",
+                "status": "ready",
+                "video_url": None,
+                "duration_sec": audio_duration or 6.0
+            }
         
         return LessonSegmentRender(
             segment_id=segment_id,

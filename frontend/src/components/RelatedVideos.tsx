@@ -22,6 +22,7 @@ interface RelatedVideosProps {
   segmentId?: number;
   sessionId?: string;
   context?: string;
+  defaultOpen?: boolean;
 }
 
 export default function RelatedVideos({
@@ -30,8 +31,9 @@ export default function RelatedVideos({
   segmentId,
   sessionId,
   context,
+  defaultOpen = true,
 }: RelatedVideosProps) {
-  const [isOpen, setIsOpen] = useState(false);
+  const [isOpen, setIsOpen] = useState(defaultOpen);
   const [hasFetched, setHasFetched] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -39,7 +41,7 @@ export default function RelatedVideos({
   const [activeVideoId, setActiveVideoId] = useState<string | null>(null);
   const prefersReducedMotion = usePrefersReducedMotion();
 
-  // Lazy fetch triggered only upon opening the disclosure
+  // Lazy fetch triggered upon opening or auto-open
   useEffect(() => {
     if (isOpen && !hasFetched) {
       setHasFetched(true);
@@ -81,7 +83,7 @@ export default function RelatedVideos({
         icon={<Tv className="w-4 h-4 text-primary" />}
         badge="YouTube Data API"
         variant="bordered"
-        defaultOpen={false}
+        defaultOpen={defaultOpen}
         onToggle={(open) => setIsOpen(open)}
       >
         <div className="space-y-4 pt-1">

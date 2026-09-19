@@ -122,12 +122,13 @@ async def switch_language(
     sess.language = req.target_language
     db.commit()
 
-    # Regenerate current segment without losing progress or analogies
+    # Regenerate current segment in target language without heavy video re-encoding
     segment_payload = await TeacherAgentStateMachine.render_segment(
         session_id=req.session_id,
         segment_id=req.current_segment_id,
         language=req.target_language,
-        db=db
+        db=db,
+        skip_video=True
     )
     return segment_payload
 
