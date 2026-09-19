@@ -1,0 +1,161 @@
+{
+  "queries_evaluated": 20,
+  "candidate_chunks": 3,
+  "pure_vector": {
+    "hit_at_1_percent": 100.0,
+    "hit_at_3_percent": 100.0,
+    "mean_reciprocal_rank": 1.0
+  },
+  "hybrid_0.7_vector_0.3_lexical": {
+    "hit_at_1_percent": 100.0,
+    "hit_at_3_percent": 100.0,
+    "mean_reciprocal_rank": 1.0
+  },
+  "delta": {
+    "hit_at_1_improvement_percent": 0.0,
+    "hit_at_3_improvement_percent": 0.0,
+    "mrr_improvement": 0.0
+  },
+  "details": [
+    {
+      "id": "q01",
+      "query": "How do photosystems capture photons and split water in the thylakoid membrane?",
+      "target_chunk": "chunk-doc-demo-photosynthesis-p1",
+      "pure_vector_rank": 1,
+      "hybrid_rank": 1
+    },
+    {
+      "id": "q02",
+      "query": "What is photolysis and what gases are produced as a byproduct of light reactions?",
+      "target_chunk": "chunk-doc-demo-photosynthesis-p1",
+      "pure_vector_rank": 1,
+      "hybrid_rank": 1
+    },
+    {
+      "id": "q03",
+      "query": "Why do plants look green under sunlight instead of blue or red?",
+      "target_chunk": "chunk-doc-demo-photosynthesis-p1",
+      "pure_vector_rank": 1,
+      "hybrid_rank": 1
+    },
+    {
+      "id": "q04",
+      "query": "What is the absorption spectrum of chlorophyll a and chlorophyll b?",
+      "target_chunk": "chunk-doc-demo-photosynthesis-p1",
+      "pure_vector_rank": 1,
+      "hybrid_rank": 1
+    },
+    {
+      "id": "q05",
+      "query": "How does the electrochemical proton gradient power ATP synthase in chloroplasts?",
+      "target_chunk": "chunk-doc-demo-photosynthesis-p1",
+      "pure_vector_rank": 1,
+      "hybrid_rank": 1
+    },
+    {
+      "id": "q06",
+      "query": "What is the role of the enzyme RuBisCO in carbon fixation?",
+      "target_chunk": "chunk-doc-demo-photosynthesis-p2",
+      "pure_vector_rank": 1,
+      "hybrid_rank": 1
+    },
+    {
+      "id": "q07",
+      "query": "Explain the three main phases of the Calvin cycle in the stroma.",
+      "target_chunk": "chunk-doc-demo-photosynthesis-p2",
+      "pure_vector_rank": 1,
+      "hybrid_rank": 1
+    },
+    {
+      "id": "q08",
+      "query": "How do ATP and NADPH reduce 3-PGA to form G3P sugar molecules?",
+      "target_chunk": "chunk-doc-demo-photosynthesis-p2",
+      "pure_vector_rank": 1,
+      "hybrid_rank": 1
+    },
+    {
+      "id": "q09",
+      "query": "How is RuBP regenerated during the light-independent reactions?",
+      "target_chunk": "chunk-doc-demo-photosynthesis-p2",
+      "pure_vector_rank": 1,
+      "hybrid_rank": 1
+    },
+    {
+      "id": "q10",
+      "query": "How many turns of the Calvin cycle are required to produce a net glucose precursor?",
+      "target_chunk": "chunk-doc-demo-photosynthesis-p2",
+      "pure_vector_rank": 1,
+      "hybrid_rank": 1
+    },
+    {
+      "id": "q11",
+      "query": "What is the overall balanced chemical formula for aerobic cellular respiration?",
+      "target_chunk": "chunk-doc-demo-photosynthesis-p3",
+      "pure_vector_rank": 1,
+      "hybrid_rank": 1
+    },
+    {
+      "id": "q12",
+      "query": "Where does glycolysis occur and how much net ATP does it generate from one glucose?",
+      "target_chunk": "chunk-doc-demo-photosynthesis-p3",
+      "pure_vector_rank": 1,
+      "hybrid_rank": 1
+    },
+    {
+      "id": "q13",
+      "query": "What happens during pyruvate oxidation in the mitochondrial matrix?",
+      "target_chunk": "chunk-doc-demo-photosynthesis-p3",
+      "pure_vector_rank": 1,
+      "hybrid_rank": 1
+    },
+    {
+      "id": "q14",
+      "query": "How many electron carriers NADH and FADH2 are generated per glucose in the citric acid cycle?",
+      "target_chunk": "chunk-doc-demo-photosynthesis-p3",
+      "pure_vector_rank": 1,
+      "hybrid_rank": 1
+    },
+    {
+      "id": "q15",
+      "query": "How many total ATP molecules are produced per glucose through oxidative phosphorylation?",
+      "target_chunk": "chunk-doc-demo-photosynthesis-p3",
+      "pure_vector_rank": 1,
+      "hybrid_rank": 1
+    },
+    {
+      "id": "q16",
+      "query": "What is the terminal electron acceptor in the mitochondrial electron transport chain?",
+      "target_chunk": "chunk-doc-demo-photosynthesis-p3",
+      "pure_vector_rank": 1,
+      "hybrid_rank": 1
+    },
+    {
+      "id": "q17",
+      "query": "How are Photosystem II (P680) and Photosystem I (P700) connected in series?",
+      "target_chunk": "chunk-doc-demo-photosynthesis-p1",
+      "pure_vector_rank": 1,
+      "hybrid_rank": 1
+    },
+    {
+      "id": "q18",
+      "query": "What molecule is carbon dioxide attached to at the start of the dark reactions?",
+      "target_chunk": "chunk-doc-demo-photosynthesis-p2",
+      "pure_vector_rank": 1,
+      "hybrid_rank": 1
+    },
+    {
+      "id": "q19",
+      "query": "What is the difference between anaerobic glycolysis and aerobic mitochondrial respiration?",
+      "target_chunk": "chunk-doc-demo-photosynthesis-p3",
+      "pure_vector_rank": 1,
+      "hybrid_rank": 1
+    },
+    {
+      "id": "q20",
+      "query": "Why does chlorophyll fail to absorb photons in the green 500-550 nanometer spectrum?",
+      "target_chunk": "chunk-doc-demo-photosynthesis-p1",
+      "pure_vector_rank": 1,
+      "hybrid_rank": 1
+    }
+  ]
+}

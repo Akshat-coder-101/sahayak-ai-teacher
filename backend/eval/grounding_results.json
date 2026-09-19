@@ -1,0 +1,269 @@
+{
+  "segments_evaluated": 10,
+  "total_citations_checked": 10,
+  "valid_chunk_ids_in_database": 10,
+  "chunk_id_existence_rate_percent": 100.0,
+  "supporting_citations_count": 10,
+  "citation_claim_support_rate_percent": 100.0,
+  "segments_fully_grounded_percent": 100.0,
+  "details": [
+    {
+      "segment_concept": "Biological Inspiration & Perceptron Basics",
+      "script_snippet": "Neural networks are computational models inspired by biological neural circuits. The funda...",
+      "all_citations_exist": true,
+      "citations_support_claim": true,
+      "citations": [
+        {
+          "chunk_id": "9941646a-7dec-4b3c-beba-4731f24cf794",
+          "exists_in_db": true,
+          "chapter": "Chapter 1: Neural Networks and Deep Learning",
+          "page": 1,
+          "lexical_overlap_jaccard": 0.3333,
+          "shared_keywords": [
+            "circuits",
+            "perceptron",
+            "models",
+            "computational",
+            "biological",
+            "architecture",
+            "inspired",
+            "neural"
+          ],
+          "is_supporting": true
+        }
+      ]
+    },
+    {
+      "segment_concept": "Activation Functions & Training Mechanics",
+      "script_snippet": "To process information, networks use activation functions like ReLU and Sigmoid. The learn...",
+      "all_citations_exist": true,
+      "citations_support_claim": true,
+      "citations": [
+        {
+          "chunk_id": "9941646a-7dec-4b3c-beba-4731f24cf794",
+          "exists_in_db": true,
+          "chapter": "Chapter 1: Neural Networks and Deep Learning",
+          "page": 1,
+          "lexical_overlap_jaccard": 0.3214,
+          "shared_keywords": [
+            "backpropagation",
+            "gradient",
+            "like",
+            "relu",
+            "functions",
+            "activation",
+            "descent",
+            "sigmoid"
+          ],
+          "is_supporting": true
+        }
+      ]
+    },
+    {
+      "segment_concept": "Comparative Performance: MLP vs. Deep ResNet",
+      "script_snippet": "Comparing architectures shows that while an MLP Baseline uses 1.2M parameters for 88.4% ac...",
+      "all_citations_exist": true,
+      "citations_support_claim": true,
+      "citations": [
+        {
+          "chunk_id": "f2967646-a336-4b7b-adb4-82ea3a83aca3",
+          "exists_in_db": true,
+          "chapter": "Section 2: Performance Evaluation Matrix",
+          "page": 2,
+          "lexical_overlap_jaccard": 0.4815,
+          "shared_keywords": [
+            "comparative",
+            "parameters",
+            "resnet",
+            "achieve",
+            "residual",
+            "superior",
+            "architectures",
+            "baseline"
+          ],
+          "is_supporting": true
+        }
+      ]
+    },
+    {
+      "segment_concept": "Synthesis: Depth and Parameter Trade-offs",
+      "script_snippet": "Synthesizing the data, the Deep ResNet requires significantly more parameters (25.6M vs 1....",
+      "all_citations_exist": true,
+      "citations_support_claim": true,
+      "citations": [
+        {
+          "chunk_id": "f2967646-a336-4b7b-adb4-82ea3a83aca3",
+          "exists_in_db": true,
+          "chapter": "Section 2: Performance Evaluation Matrix",
+          "page": 2,
+          "lexical_overlap_jaccard": 0.2821,
+          "shared_keywords": [
+            "parameters",
+            "conclusion",
+            "resnet",
+            "achieve",
+            "residual",
+            "superior",
+            "baseline",
+            "accuracy"
+          ],
+          "is_supporting": true
+        }
+      ]
+    },
+    {
+      "segment_concept": "Isolated Systems and Inertial Frames",
+      "script_snippet": "Introduce the idea of an 'isolated mechanical system' as a closed box where no outside for...",
+      "all_citations_exist": true,
+      "citations_support_claim": true,
+      "citations": [
+        {
+          "chunk_id": "0ab81dbe-1939-457c-beac-a1c47e600bc1",
+          "exists_in_db": true,
+          "chapter": "Document Content",
+          "page": 1,
+          "lexical_overlap_jaccard": 0.0841,
+          "shared_keywords": [
+            "reference",
+            "closed",
+            "frames",
+            "forces",
+            "inertial",
+            "system",
+            "isolated",
+            "introduce"
+          ],
+          "is_supporting": true
+        }
+      ]
+    },
+    {
+      "segment_concept": "Defining Total Linear Momentum",
+      "script_snippet": "Break down the formula P = sum(m_i * v_i). Explain that 'm_i' is the mass of each object a...",
+      "all_citations_exist": true,
+      "citations_support_claim": true,
+      "citations": [
+        {
+          "chunk_id": "0ab81dbe-1939-457c-beac-a1c47e600bc1",
+          "exists_in_db": true,
+          "chapter": "Document Content",
+          "page": 1,
+          "lexical_overlap_jaccard": 0.068,
+          "shared_keywords": [
+            "momentum",
+            "total",
+            "system",
+            "linear",
+            "mass",
+            "velocity",
+            "sum"
+          ],
+          "is_supporting": true
+        }
+      ]
+    },
+    {
+      "segment_concept": "Conservation of Momentum in Action",
+      "script_snippet": "Explain that if the system is isolated (no external forces), the total P remains constant....",
+      "all_citations_exist": true,
+      "citations_support_claim": true,
+      "citations": [
+        {
+          "chunk_id": "0ab81dbe-1939-457c-beac-a1c47e600bc1",
+          "exists_in_db": true,
+          "chapter": "Document Content",
+          "page": 1,
+          "lexical_overlap_jaccard": 0.0741,
+          "shared_keywords": [
+            "momentum",
+            "forces",
+            "system",
+            "conservation",
+            "isolated",
+            "constant",
+            "external",
+            "total"
+          ],
+          "is_supporting": true
+        }
+      ]
+    },
+    {
+      "segment_concept": "Synthesis: State Vector and System Dynamics",
+      "script_snippet": "Connect the concepts by introducing the 'state vector' mentioned in the document. Explain ...",
+      "all_citations_exist": true,
+      "citations_support_claim": true,
+      "citations": [
+        {
+          "chunk_id": "0ab81dbe-1939-457c-beac-a1c47e600bc1",
+          "exists_in_db": true,
+          "chapter": "Document Content",
+          "page": 1,
+          "lexical_overlap_jaccard": 0.066,
+          "shared_keywords": [
+            "momentum",
+            "state",
+            "inertial",
+            "system",
+            "conservation",
+            "dynamics",
+            "vector"
+          ],
+          "is_supporting": true
+        }
+      ]
+    },
+    {
+      "segment_concept": "1. Document Content",
+      "script_snippet": "Classical Mechanics and System Dynamics. Section 1: Inertial Reference Frames and Conserva...",
+      "all_citations_exist": true,
+      "citations_support_claim": true,
+      "citations": [
+        {
+          "chunk_id": "1ae12d91-b1e0-4dc4-bcbf-80da21b7235a",
+          "exists_in_db": true,
+          "chapter": "Document Content",
+          "page": 1,
+          "lexical_overlap_jaccard": 0.1932,
+          "shared_keywords": [
+            "reference",
+            "mechanics",
+            "momentum",
+            "frames",
+            "total",
+            "classical",
+            "section",
+            "system"
+          ],
+          "is_supporting": true
+        }
+      ]
+    },
+    {
+      "segment_concept": "2. Document Content",
+      "script_snippet": "Classical Mechanics and System Dynamics. Section 1: Inertial Reference Frames and Conserva...",
+      "all_citations_exist": true,
+      "citations_support_claim": true,
+      "citations": [
+        {
+          "chunk_id": "1ae12d91-b1e0-4dc4-bcbf-80da21b7235a",
+          "exists_in_db": true,
+          "chapter": "Document Content",
+          "page": 1,
+          "lexical_overlap_jaccard": 0.1932,
+          "shared_keywords": [
+            "reference",
+            "mechanics",
+            "momentum",
+            "frames",
+            "total",
+            "classical",
+            "section",
+            "system"
+          ],
+          "is_supporting": true
+        }
+      ]
+    }
+  ]
+}

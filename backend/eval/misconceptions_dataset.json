@@ -1,0 +1,299 @@
+[
+  {
+    "id": "bio-01",
+    "subject": "biology",
+    "concept": "Photosynthesis Light Reactions",
+    "question": "Why do plant leaves appear green under white sunlight?",
+    "correct_answer": "Chlorophyll cannot absorb green light efficiently, reflecting green wavelengths back to our eyes.",
+    "student_answer": "Chlorophyll absorbs green light to make energy.",
+    "expected_classification": "misconception"
+  },
+  {
+    "id": "bio-02",
+    "subject": "biology",
+    "concept": "Photosynthesis Light Reactions",
+    "question": "Why do plant leaves appear green under white sunlight?",
+    "correct_answer": "Chlorophyll cannot absorb green light efficiently, reflecting green wavelengths back to our eyes.",
+    "student_answer": "Because green wavelengths are reflected while blue and red are absorbed.",
+    "expected_classification": "correct"
+  },
+  {
+    "id": "bio-03",
+    "subject": "biology",
+    "concept": "Photosynthesis Light Reactions",
+    "question": "Why do plant leaves appear green under white sunlight?",
+    "correct_answer": "Chlorophyll cannot absorb green light efficiently, reflecting green wavelengths back to our eyes.",
+    "student_answer": "It has something to do with the color of light and chloroplasts.",
+    "expected_classification": "partially_correct"
+  },
+  {
+    "id": "bio-04",
+    "subject": "biology",
+    "concept": "Photosynthesis Light Reactions",
+    "question": "Why do plant leaves appear green under white sunlight?",
+    "correct_answer": "Chlorophyll cannot absorb green light efficiently, reflecting green wavelengths back to our eyes.",
+    "student_answer": "I have no idea what chloroplasts or wavelengths are.",
+    "expected_classification": "no_understanding"
+  },
+  {
+    "id": "bio-05",
+    "subject": "biology",
+    "concept": "Cellular Respiration",
+    "question": "Where does aerobic ATP synthesis primarily occur in eukaryotic cells?",
+    "correct_answer": "In the inner mitochondrial membrane through oxidative phosphorylation.",
+    "student_answer": "In the mitochondria through the electron transport chain.",
+    "expected_classification": "correct"
+  },
+  {
+    "id": "bio-06",
+    "subject": "biology",
+    "concept": "Cellular Respiration",
+    "question": "Where does aerobic ATP synthesis primarily occur in eukaryotic cells?",
+    "correct_answer": "In the inner mitochondrial membrane through oxidative phosphorylation.",
+    "student_answer": "Respiration only occurs in animal cells because plants only do photosynthesis.",
+    "expected_classification": "misconception"
+  },
+  {
+    "id": "bio-07",
+    "subject": "biology",
+    "concept": "Cellular Respiration",
+    "question": "Where does aerobic ATP synthesis primarily occur in eukaryotic cells?",
+    "correct_answer": "In the inner mitochondrial membrane through oxidative phosphorylation.",
+    "student_answer": "Inside the cell cytoplasm during glycolysis.",
+    "expected_classification": "partially_correct"
+  },
+  {
+    "id": "bio-08",
+    "subject": "biology",
+    "concept": "Cellular Respiration",
+    "question": "Where does aerobic ATP synthesis primarily occur in eukaryotic cells?",
+    "correct_answer": "In the inner mitochondrial membrane through oxidative phosphorylation.",
+    "student_answer": "Energy is just magic in the body.",
+    "expected_classification": "no_understanding"
+  },
+  {
+    "id": "bio-09",
+    "subject": "biology",
+    "concept": "Calvin Cycle",
+    "question": "What is the primary function of the enzyme RuBisCO in photosynthesis?",
+    "correct_answer": "RuBisCO catalyzes the fixation of carbon dioxide to RuBP in the Calvin cycle.",
+    "student_answer": "RuBisCO fixes atmospheric CO2 into 3-PGA sugars.",
+    "expected_classification": "correct"
+  },
+  {
+    "id": "bio-10",
+    "subject": "biology",
+    "concept": "Calvin Cycle",
+    "question": "What is the primary function of the enzyme RuBisCO in photosynthesis?",
+    "correct_answer": "RuBisCO catalyzes the fixation of carbon dioxide to RuBP in the Calvin cycle.",
+    "student_answer": "RuBisCO splits water molecules into oxygen using light energy.",
+    "expected_classification": "misconception"
+  },
+  {
+    "id": "phys-01",
+    "subject": "physics",
+    "concept": "Newtonian Gravity & Free Fall",
+    "question": "In a vacuum, which hits the ground first: a 10kg iron cannonball or a 1g bird feather?",
+    "correct_answer": "Both hit the ground at the exact same instant because gravitational acceleration g is independent of mass.",
+    "student_answer": "Both hit simultaneously because gravity accelerates all objects at the exact same rate regardless of mass in a vacuum.",
+    "expected_classification": "correct"
+  },
+  {
+    "id": "phys-02",
+    "subject": "physics",
+    "concept": "Newtonian Gravity & Free Fall",
+    "question": "In a vacuum, which hits the ground first: a 10kg iron cannonball or a 1g bird feather?",
+    "correct_answer": "Both hit the ground at the exact same instant because gravitational acceleration g is independent of mass.",
+    "student_answer": "The heavy iron cannonball falls faster because heavier objects feel more gravity.",
+    "expected_classification": "misconception"
+  },
+  {
+    "id": "phys-03",
+    "subject": "physics",
+    "concept": "Newtonian Gravity & Free Fall",
+    "question": "In a vacuum, which hits the ground first: a 10kg iron cannonball or a 1g bird feather?",
+    "correct_answer": "Both hit the ground at the exact same instant because gravitational acceleration g is independent of mass.",
+    "student_answer": "They might fall similarly, but air resistance usually affects things.",
+    "expected_classification": "partially_correct"
+  },
+  {
+    "id": "phys-04",
+    "subject": "physics",
+    "concept": "Newtonian Gravity & Free Fall",
+    "question": "In a vacuum, which hits the ground first: a 10kg iron cannonball or a 1g bird feather?",
+    "correct_answer": "Both hit the ground at the exact same instant because gravitational acceleration g is independent of mass.",
+    "student_answer": "Whatever you drop disappears.",
+    "expected_classification": "no_understanding"
+  },
+  {
+    "id": "phys-05",
+    "subject": "physics",
+    "concept": "Newton's Third Law",
+    "question": "When an apple falls toward the Earth, does the apple exert any gravitational force on the Earth?",
+    "correct_answer": "Yes, the apple exerts an equal and opposite gravitational force on the Earth according to Newton's Third Law.",
+    "student_answer": "Yes, exactly equal in magnitude and opposite in direction.",
+    "expected_classification": "correct"
+  },
+  {
+    "id": "phys-06",
+    "subject": "physics",
+    "concept": "Newton's Third Law",
+    "question": "When an apple falls toward the Earth, does the apple exert any gravitational force on the Earth?",
+    "correct_answer": "Yes, the apple exerts an equal and opposite gravitational force on the Earth according to Newton's Third Law.",
+    "student_answer": "No, only massive planets exert gravity, tiny objects have zero gravitational pull.",
+    "expected_classification": "misconception"
+  },
+  {
+    "id": "phys-07",
+    "subject": "physics",
+    "concept": "Newton's Third Law",
+    "question": "When an apple falls toward the Earth, does the apple exert any gravitational force on the Earth?",
+    "correct_answer": "Yes, the apple exerts an equal and opposite gravitational force on the Earth according to Newton's Third Law.",
+    "student_answer": "It exerts a tiny tiny bit, but not enough to count as real force.",
+    "expected_classification": "partially_correct"
+  },
+  {
+    "id": "phys-08",
+    "subject": "physics",
+    "concept": "Electric Current & Circuits",
+    "question": "In a simple closed electrical circuit, what happens to electrons as they flow through a resistor?",
+    "correct_answer": "Electrons lose electrical potential energy as heat, but the rate of electron flow (current) remains constant.",
+    "student_answer": "Current is conserved across the resistor; potential energy drops while electron flow rate stays identical.",
+    "expected_classification": "correct"
+  },
+  {
+    "id": "phys-09",
+    "subject": "physics",
+    "concept": "Electric Current & Circuits",
+    "question": "In a simple closed electrical circuit, what happens to electrons as they flow through a resistor?",
+    "correct_answer": "Electrons lose electrical potential energy as heat, but the rate of electron flow (current) remains constant.",
+    "student_answer": "The electrons get consumed and burned up inside the resistor, so fewer electrons return to the battery.",
+    "expected_classification": "misconception"
+  },
+  {
+    "id": "phys-10",
+    "subject": "physics",
+    "concept": "Electric Current & Circuits",
+    "question": "In a simple closed electrical circuit, what happens to electrons as they flow through a resistor?",
+    "correct_answer": "Electrons lose electrical potential energy as heat, but the rate of electron flow (current) remains constant.",
+    "student_answer": "Electricity flows like water through a pipe.",
+    "expected_classification": "partially_correct"
+  },
+  {
+    "id": "cs-01",
+    "subject": "computer_science",
+    "concept": "Computer Networking",
+    "question": "What is the primary role of a router at the Network Layer (Layer 3) of the OSI model?",
+    "correct_answer": "A router forwards data packets between different IP subnets using routing tables and IP addresses.",
+    "student_answer": "Routers forward packets across different subnets using IP addresses and routing algorithms.",
+    "expected_classification": "correct"
+  },
+  {
+    "id": "cs-02",
+    "subject": "computer_science",
+    "concept": "Computer Networking",
+    "question": "What is the primary role of a router at the Network Layer (Layer 3) of the OSI model?",
+    "correct_answer": "A router forwards data packets between different IP subnets using routing tables and IP addresses.",
+    "student_answer": "Routers broadcast Wi-Fi radio signals and generate internet electricity.",
+    "expected_classification": "misconception"
+  },
+  {
+    "id": "cs-03",
+    "subject": "computer_science",
+    "concept": "Computer Networking",
+    "question": "What is the primary role of a router at the Network Layer (Layer 3) of the OSI model?",
+    "correct_answer": "A router forwards data packets between different IP subnets using routing tables and IP addresses.",
+    "student_answer": "It manages data traffic between computers.",
+    "expected_classification": "partially_correct"
+  },
+  {
+    "id": "cs-04",
+    "subject": "computer_science",
+    "concept": "Computer Networking",
+    "question": "What is the primary role of a router at the Network Layer (Layer 3) of the OSI model?",
+    "correct_answer": "A router forwards data packets between different IP subnets using routing tables and IP addresses.",
+    "student_answer": "I don't know what network layers mean.",
+    "expected_classification": "no_understanding"
+  },
+  {
+    "id": "cs-05",
+    "subject": "computer_science",
+    "concept": "Data Structures & Time Complexity",
+    "question": "What is the average time complexity of looking up a key in a balanced hash table?",
+    "correct_answer": "O(1) constant average time.",
+    "student_answer": "O(1) constant time average lookup.",
+    "expected_classification": "correct"
+  },
+  {
+    "id": "cs-06",
+    "subject": "computer_science",
+    "concept": "Data Structures & Time Complexity",
+    "question": "What is the average time complexity of looking up a key in a balanced hash table?",
+    "correct_answer": "O(1) constant average time.",
+    "student_answer": "O(n) because a hash table must scan every single element in memory from index 0.",
+    "expected_classification": "misconception"
+  },
+  {
+    "id": "cs-07",
+    "subject": "computer_science",
+    "concept": "Data Structures & Time Complexity",
+    "question": "What is the average time complexity of looking up a key in a balanced hash table?",
+    "correct_answer": "O(1) constant average time.",
+    "student_answer": "It is very fast, faster than a linked list.",
+    "expected_classification": "partially_correct"
+  },
+  {
+    "id": "chem-01",
+    "subject": "chemistry",
+    "concept": "Chemical Bonding",
+    "question": "Why do atoms form chemical bonds with each other?",
+    "correct_answer": "To achieve a stable lower potential energy state, typically having a full valence electron shell.",
+    "student_answer": "To lower their potential energy and achieve a stable valence octet.",
+    "expected_classification": "correct"
+  },
+  {
+    "id": "chem-02",
+    "subject": "chemistry",
+    "concept": "Chemical Bonding",
+    "question": "Why do atoms form chemical bonds with each other?",
+    "correct_answer": "To achieve a stable lower potential energy state, typically having a full valence electron shell.",
+    "student_answer": "Atoms bond because they have feelings and consciously desire to be like noble gases.",
+    "expected_classification": "misconception"
+  },
+  {
+    "id": "chem-03",
+    "subject": "chemistry",
+    "concept": "Chemical Bonding",
+    "question": "Why do atoms form chemical bonds with each other?",
+    "correct_answer": "To achieve a stable lower potential energy state, typically having a full valence electron shell.",
+    "student_answer": "It involves valence electrons being shared or transferred.",
+    "expected_classification": "partially_correct"
+  },
+  {
+    "id": "chem-04",
+    "subject": "chemistry",
+    "concept": "Chemical Bonding",
+    "question": "Why do atoms form chemical bonds with each other?",
+    "correct_answer": "To achieve a stable lower potential energy state, typically having a full valence electron shell.",
+    "student_answer": "Chemistry is too confusing for me.",
+    "expected_classification": "no_understanding"
+  },
+  {
+    "id": "chem-05",
+    "subject": "chemistry",
+    "concept": "Conservation of Mass in Reactions",
+    "question": "When wood burns in a campfire, why does the pile of ash weigh less than the original log?",
+    "correct_answer": "Mass is conserved; the missing mass escaped into the atmosphere as carbon dioxide gas and water vapor.",
+    "student_answer": "The mass turned into gaseous CO2 and steam escaping into the air, conserving total mass.",
+    "expected_classification": "correct"
+  },
+  {
+    "id": "chem-06",
+    "subject": "chemistry",
+    "concept": "Conservation of Mass in Reactions",
+    "question": "When wood burns in a campfire, why does the pile of ash weigh less than the original log?",
+    "correct_answer": "Mass is conserved; the missing mass escaped into the atmosphere as carbon dioxide gas and water vapor.",
+    "student_answer": "The mass was destroyed and converted completely into pure light and heat.",
+    "expected_classification": "misconception"
+  }
+]

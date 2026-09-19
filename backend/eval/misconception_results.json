@@ -1,0 +1,371 @@
+{
+  "total_samples": 33,
+  "matched": 10,
+  "overall_accuracy_percent": 30.3,
+  "misconception_metrics": {
+    "true_positives": 10,
+    "false_positives": 22,
+    "false_negatives": 0,
+    "precision_percent": 31.25,
+    "recall_percent": 100.0,
+    "f1_score": 47.62
+  },
+  "confusion_matrix": {
+    "correct": {
+      "correct": 0,
+      "partially_correct": 0,
+      "misconception": 10,
+      "no_understanding": 0
+    },
+    "partially_correct": {
+      "correct": 1,
+      "partially_correct": 0,
+      "misconception": 7,
+      "no_understanding": 0
+    },
+    "misconception": {
+      "correct": 0,
+      "partially_correct": 0,
+      "misconception": 10,
+      "no_understanding": 0
+    },
+    "no_understanding": {
+      "correct": 0,
+      "partially_correct": 0,
+      "misconception": 5,
+      "no_understanding": 0
+    }
+  },
+  "details": [
+    {
+      "id": "bio-01",
+      "subject": "biology",
+      "question": "Why do plant leaves appear green under white sunlight?",
+      "student_answer": "Chlorophyll absorbs green light to make energy.",
+      "expected": "misconception",
+      "predicted": "misconception",
+      "match": true,
+      "feedback": "You are on the right track by identifying chlorophyll and energy production, but there is a critical error in how light is handled. Chlorophyll actually reflects green light, which is why plants look green to us, rather than absorbing it. It primarily absorbs red and blue light to drive the process."
+    },
+    {
+      "id": "bio-02",
+      "subject": "biology",
+      "question": "Why do plant leaves appear green under white sunlight?",
+      "student_answer": "Because green wavelengths are reflected while blue and red are absorbed.",
+      "expected": "correct",
+      "predicted": "misconception",
+      "match": false,
+      "feedback": "Great try! You hit a very common nuance in **Scientific Reasoning**. Let's unpack this with a fresh perspective."
+    },
+    {
+      "id": "bio-03",
+      "subject": "biology",
+      "question": "Why do plant leaves appear green under white sunlight?",
+      "student_answer": "It has something to do with the color of light and chloroplasts.",
+      "expected": "partially_correct",
+      "predicted": "misconception",
+      "match": false,
+      "feedback": "You've identified some biological components like chloroplasts, which shows you're thinking about the context, but the core of scientific reasoning isn't about specific colors or parts of a cell. It's about the logical process we use to test ideas. Let's reset and look at the method, not just the materials."
+    },
+    {
+      "id": "bio-04",
+      "subject": "biology",
+      "question": "Why do plant leaves appear green under white sunlight?",
+      "student_answer": "I have no idea what chloroplasts or wavelengths are.",
+      "expected": "no_understanding",
+      "predicted": "misconception",
+      "match": false,
+      "feedback": "Great try! You hit a very common nuance in **Scientific Reasoning**. Let's unpack this with a fresh perspective."
+    },
+    {
+      "id": "bio-05",
+      "subject": "biology",
+      "question": "Where does aerobic ATP synthesis primarily occur in eukaryotic cells?",
+      "student_answer": "In the mitochondria through the electron transport chain.",
+      "expected": "correct",
+      "predicted": "misconception",
+      "match": false,
+      "feedback": "Great try! You hit a very common nuance in **Scientific Reasoning**. Let's unpack this with a fresh perspective."
+    },
+    {
+      "id": "bio-06",
+      "subject": "biology",
+      "question": "Where does aerobic ATP synthesis primarily occur in eukaryotic cells?",
+      "student_answer": "Respiration only occurs in animal cells because plants only do photosynthesis.",
+      "expected": "misconception",
+      "predicted": "misconception",
+      "match": true,
+      "feedback": "Great try! You hit a very common nuance in **Scientific Reasoning**. Let's unpack this with a fresh perspective."
+    },
+    {
+      "id": "bio-07",
+      "subject": "biology",
+      "question": "Where does aerobic ATP synthesis primarily occur in eukaryotic cells?",
+      "student_answer": "Inside the cell cytoplasm during glycolysis.",
+      "expected": "partially_correct",
+      "predicted": "misconception",
+      "match": false,
+      "feedback": "Great try! You hit a very common nuance in **Scientific Reasoning**. Let's unpack this with a fresh perspective."
+    },
+    {
+      "id": "bio-08",
+      "subject": "biology",
+      "question": "Where does aerobic ATP synthesis primarily occur in eukaryotic cells?",
+      "student_answer": "Energy is just magic in the body.",
+      "expected": "no_understanding",
+      "predicted": "misconception",
+      "match": false,
+      "feedback": "Great try! You hit a very common nuance in **Scientific Reasoning**. Let's unpack this with a fresh perspective."
+    },
+    {
+      "id": "bio-09",
+      "subject": "biology",
+      "question": "What is the primary function of the enzyme RuBisCO in photosynthesis?",
+      "student_answer": "RuBisCO fixes atmospheric CO2 into 3-PGA sugars.",
+      "expected": "correct",
+      "predicted": "misconception",
+      "match": false,
+      "feedback": "Great try! You hit a very common nuance in **Scientific Reasoning**. Let's unpack this with a fresh perspective."
+    },
+    {
+      "id": "bio-10",
+      "subject": "biology",
+      "question": "What is the primary function of the enzyme RuBisCO in photosynthesis?",
+      "student_answer": "RuBisCO splits water molecules into oxygen using light energy.",
+      "expected": "misconception",
+      "predicted": "misconception",
+      "match": true,
+      "feedback": "Great try! You hit a very common nuance in **Scientific Reasoning**. Let's unpack this with a fresh perspective."
+    },
+    {
+      "id": "phys-01",
+      "subject": "physics",
+      "question": "In a vacuum, which hits the ground first: a 10kg iron cannonball or a 1g bird feather?",
+      "student_answer": "Both hit simultaneously because gravity accelerates all objects at the exact same rate regardless of mass in a vacuum.",
+      "expected": "correct",
+      "predicted": "misconception",
+      "match": false,
+      "feedback": "Great try! You hit a very common nuance in **Scientific Reasoning**. Let's unpack this with a fresh perspective."
+    },
+    {
+      "id": "phys-02",
+      "subject": "physics",
+      "question": "In a vacuum, which hits the ground first: a 10kg iron cannonball or a 1g bird feather?",
+      "student_answer": "The heavy iron cannonball falls faster because heavier objects feel more gravity.",
+      "expected": "misconception",
+      "predicted": "misconception",
+      "match": true,
+      "feedback": "Great try! You hit a very common nuance in **Scientific Reasoning**. Let's unpack this with a fresh perspective."
+    },
+    {
+      "id": "phys-03",
+      "subject": "physics",
+      "question": "In a vacuum, which hits the ground first: a 10kg iron cannonball or a 1g bird feather?",
+      "student_answer": "They might fall similarly, but air resistance usually affects things.",
+      "expected": "partially_correct",
+      "predicted": "correct",
+      "match": false,
+      "feedback": "You are on the right track by identifying that external factors like air resistance can influence outcomes. However, in scientific reasoning, we must distinguish between the idealized theoretical model (where objects fall at the same rate in a vacuum) and real-world observations. Your answer suggests that air resistance is the primary reason for differences, which is true in practice, but you missed the core principle that gravity acts equally on all masses regardless of weight."
+    },
+    {
+      "id": "phys-04",
+      "subject": "physics",
+      "question": "In a vacuum, which hits the ground first: a 10kg iron cannonball or a 1g bird feather?",
+      "student_answer": "Whatever you drop disappears.",
+      "expected": "no_understanding",
+      "predicted": "misconception",
+      "match": false,
+      "feedback": "Great try! You hit a very common nuance in **Scientific Reasoning**. Let's unpack this with a fresh perspective."
+    },
+    {
+      "id": "phys-05",
+      "subject": "physics",
+      "question": "When an apple falls toward the Earth, does the apple exert any gravitational force on the Earth?",
+      "student_answer": "Yes, exactly equal in magnitude and opposite in direction.",
+      "expected": "correct",
+      "predicted": "misconception",
+      "match": false,
+      "feedback": "Great try! You hit a very common nuance in **Scientific Reasoning**. Let's unpack this with a fresh perspective."
+    },
+    {
+      "id": "phys-06",
+      "subject": "physics",
+      "question": "When an apple falls toward the Earth, does the apple exert any gravitational force on the Earth?",
+      "student_answer": "No, only massive planets exert gravity, tiny objects have zero gravitational pull.",
+      "expected": "misconception",
+      "predicted": "misconception",
+      "match": true,
+      "feedback": "Great try! You hit a very common nuance in **Scientific Reasoning**. Let's unpack this with a fresh perspective."
+    },
+    {
+      "id": "phys-07",
+      "subject": "physics",
+      "question": "When an apple falls toward the Earth, does the apple exert any gravitational force on the Earth?",
+      "student_answer": "It exerts a tiny tiny bit, but not enough to count as real force.",
+      "expected": "partially_correct",
+      "predicted": "misconception",
+      "match": false,
+      "feedback": "Great try! You hit a very common nuance in **Scientific Reasoning**. Let's unpack this with a fresh perspective."
+    },
+    {
+      "id": "phys-08",
+      "subject": "physics",
+      "question": "In a simple closed electrical circuit, what happens to electrons as they flow through a resistor?",
+      "student_answer": "Current is conserved across the resistor; potential energy drops while electron flow rate stays identical.",
+      "expected": "correct",
+      "predicted": "misconception",
+      "match": false,
+      "feedback": "Great try! You hit a very common nuance in **Scientific Reasoning**. Let's unpack this with a fresh perspective."
+    },
+    {
+      "id": "phys-09",
+      "subject": "physics",
+      "question": "In a simple closed electrical circuit, what happens to electrons as they flow through a resistor?",
+      "student_answer": "The electrons get consumed and burned up inside the resistor, so fewer electrons return to the battery.",
+      "expected": "misconception",
+      "predicted": "misconception",
+      "match": true,
+      "feedback": "Great try! You hit a very common nuance in **Scientific Reasoning**. Let's unpack this with a fresh perspective."
+    },
+    {
+      "id": "phys-10",
+      "subject": "physics",
+      "question": "In a simple closed electrical circuit, what happens to electrons as they flow through a resistor?",
+      "student_answer": "Electricity flows like water through a pipe.",
+      "expected": "partially_correct",
+      "predicted": "misconception",
+      "match": false,
+      "feedback": "Great try! You hit a very common nuance in **Scientific Reasoning**. Let's unpack this with a fresh perspective."
+    },
+    {
+      "id": "cs-01",
+      "subject": "computer_science",
+      "question": "What is the primary role of a router at the Network Layer (Layer 3) of the OSI model?",
+      "student_answer": "Routers forward packets across different subnets using IP addresses and routing algorithms.",
+      "expected": "correct",
+      "predicted": "misconception",
+      "match": false,
+      "feedback": "Great try! You hit a very common nuance in **Scientific Reasoning**. Let's unpack this with a fresh perspective."
+    },
+    {
+      "id": "cs-02",
+      "subject": "computer_science",
+      "question": "What is the primary role of a router at the Network Layer (Layer 3) of the OSI model?",
+      "student_answer": "Routers broadcast Wi-Fi radio signals and generate internet electricity.",
+      "expected": "misconception",
+      "predicted": "misconception",
+      "match": true,
+      "feedback": "Great try! You hit a very common nuance in **Scientific Reasoning**. Let's unpack this with a fresh perspective."
+    },
+    {
+      "id": "cs-03",
+      "subject": "computer_science",
+      "question": "What is the primary role of a router at the Network Layer (Layer 3) of the OSI model?",
+      "student_answer": "It manages data traffic between computers.",
+      "expected": "partially_correct",
+      "predicted": "misconception",
+      "match": false,
+      "feedback": "Great try! You hit a very common nuance in **Scientific Reasoning**. Let's unpack this with a fresh perspective."
+    },
+    {
+      "id": "cs-04",
+      "subject": "computer_science",
+      "question": "What is the primary role of a router at the Network Layer (Layer 3) of the OSI model?",
+      "student_answer": "I don't know what network layers mean.",
+      "expected": "no_understanding",
+      "predicted": "misconception",
+      "match": false,
+      "feedback": "Great try! You hit a very common nuance in **Scientific Reasoning**. Let's unpack this with a fresh perspective."
+    },
+    {
+      "id": "cs-05",
+      "subject": "computer_science",
+      "question": "What is the average time complexity of looking up a key in a balanced hash table?",
+      "student_answer": "O(1) constant time average lookup.",
+      "expected": "correct",
+      "predicted": "misconception",
+      "match": false,
+      "feedback": "Great try! You hit a very common nuance in **Scientific Reasoning**. Let's unpack this with a fresh perspective."
+    },
+    {
+      "id": "cs-06",
+      "subject": "computer_science",
+      "question": "What is the average time complexity of looking up a key in a balanced hash table?",
+      "student_answer": "O(n) because a hash table must scan every single element in memory from index 0.",
+      "expected": "misconception",
+      "predicted": "misconception",
+      "match": true,
+      "feedback": "Great try! You hit a very common nuance in **Scientific Reasoning**. Let's unpack this with a fresh perspective."
+    },
+    {
+      "id": "cs-07",
+      "subject": "computer_science",
+      "question": "What is the average time complexity of looking up a key in a balanced hash table?",
+      "student_answer": "It is very fast, faster than a linked list.",
+      "expected": "partially_correct",
+      "predicted": "misconception",
+      "match": false,
+      "feedback": "It looks like you might be thinking about computer science data structures rather than scientific reasoning. Scientific reasoning isn't about speed or data organization; it's about how we build and test explanations for the natural world. Let's reset and focus on the process of inquiry."
+    },
+    {
+      "id": "chem-01",
+      "subject": "chemistry",
+      "question": "Why do atoms form chemical bonds with each other?",
+      "student_answer": "To lower their potential energy and achieve a stable valence octet.",
+      "expected": "correct",
+      "predicted": "misconception",
+      "match": false,
+      "feedback": "Great try! You hit a very common nuance in **Scientific Reasoning**. Let's unpack this with a fresh perspective."
+    },
+    {
+      "id": "chem-02",
+      "subject": "chemistry",
+      "question": "Why do atoms form chemical bonds with each other?",
+      "student_answer": "Atoms bond because they have feelings and consciously desire to be like noble gases.",
+      "expected": "misconception",
+      "predicted": "misconception",
+      "match": true,
+      "feedback": "Great try! You hit a very common nuance in **Scientific Reasoning**. Let's unpack this with a fresh perspective."
+    },
+    {
+      "id": "chem-03",
+      "subject": "chemistry",
+      "question": "Why do atoms form chemical bonds with each other?",
+      "student_answer": "It involves valence electrons being shared or transferred.",
+      "expected": "partially_correct",
+      "predicted": "misconception",
+      "match": false,
+      "feedback": "Great try! You hit a very common nuance in **Scientific Reasoning**. Let's unpack this with a fresh perspective."
+    },
+    {
+      "id": "chem-04",
+      "subject": "chemistry",
+      "question": "Why do atoms form chemical bonds with each other?",
+      "student_answer": "Chemistry is too confusing for me.",
+      "expected": "no_understanding",
+      "predicted": "misconception",
+      "match": false,
+      "feedback": "Great try! You hit a very common nuance in **Scientific Reasoning**. Let's unpack this with a fresh perspective."
+    },
+    {
+      "id": "chem-05",
+      "subject": "chemistry",
+      "question": "When wood burns in a campfire, why does the pile of ash weigh less than the original log?",
+      "student_answer": "The mass turned into gaseous CO2 and steam escaping into the air, conserving total mass.",
+      "expected": "correct",
+      "predicted": "misconception",
+      "match": false,
+      "feedback": "Great try! You hit a very common nuance in **Scientific Reasoning**. Let's unpack this with a fresh perspective."
+    },
+    {
+      "id": "chem-06",
+      "subject": "chemistry",
+      "question": "When wood burns in a campfire, why does the pile of ash weigh less than the original log?",
+      "student_answer": "The mass was destroyed and converted completely into pure light and heat.",
+      "expected": "misconception",
+      "predicted": "misconception",
+      "match": true,
+      "feedback": "Great try! You hit a very common nuance in **Scientific Reasoning**. Let's unpack this with a fresh perspective."
+    }
+  ]
+}
