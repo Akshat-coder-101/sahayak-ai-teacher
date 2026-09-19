@@ -71,6 +71,21 @@ export default function LoginPage() {
   const [errorMsg, setErrorMsg] = useState<string | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [copiedNotification, setCopiedNotification] = useState(false);
+  const [isDemoLoading, setIsDemoLoading] = useState(false);
+
+  const handleTryDemo = async () => {
+    setIsDemoLoading(true);
+    try {
+      await login("demo.student@sahayak.edu", "DemoStudent2026!");
+      router.push("/lesson/session-demo-photosynthesis");
+    } catch {
+      const demoPreset = PRESET_USERS.find(p => p.id === "user-demo-student") || PRESET_USERS[0];
+      await switchUser(demoPreset);
+      router.push("/lesson/session-demo-photosynthesis");
+    } finally {
+      setIsDemoLoading(false);
+    }
+  };
 
   // If already logged in, route to learning portal
   useEffect(() => {
@@ -142,6 +157,25 @@ export default function LoginPage() {
       <div className="grid grid-cols-1 md:grid-cols-12 gap-8 items-start">
         {/* Form Container (7 cols) */}
         <div className="md:col-span-7 bg-white rounded-lg p-6 sm:p-8 border border-border shadow-2xs space-y-6">
+          {/* Judge Evaluation Fast Track */}
+          <div className="p-3.5 rounded-lg bg-[#E9F1FC] border border-blue-200 flex flex-col sm:flex-row items-center justify-between gap-3">
+            <div>
+              <div className="flex items-center gap-1.5 text-xs font-bold text-primary">
+                <Sparkles className="w-3.5 h-3.5" />
+                <span>Hackathon Evaluators & Judges</span>
+              </div>
+              <p className="text-xs text-ink-muted mt-0.5">Instant access to pre-generated science lesson with no sign up.</p>
+            </div>
+            <button
+              type="button"
+              onClick={handleTryDemo}
+              disabled={isDemoLoading}
+              className="w-full sm:w-auto px-4 py-2 bg-primary hover:bg-blue-700 text-white text-xs font-bold rounded shadow-xs transition-colors shrink-0 flex items-center justify-center gap-1.5 cursor-pointer"
+            >
+              {isDemoLoading ? "Launching..." : "⚡ Try Judge Demo"}
+            </button>
+          </div>
+
           {/* Tabs */}
           <div className="flex border-b border-border pb-3">
             <button

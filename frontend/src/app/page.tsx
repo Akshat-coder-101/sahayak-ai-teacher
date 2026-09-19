@@ -1,8 +1,8 @@
 "use client";
 
-import { useEffect } from "react";
+import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
-import { useAuth } from "@/context/AuthContext";
+import { useAuth, PRESET_USERS } from "@/context/AuthContext";
 import Link from "next/link";
 import { 
   Sparkles, 
@@ -16,26 +16,28 @@ import {
   RefreshCw, 
   ArrowRight, 
   CheckCircle2, 
-  PlayCircle 
+  PlayCircle,
+  Loader2
 } from "lucide-react";
 
 export default function LandingPage() {
   const router = useRouter();
-  const { user, isLoading } = useAuth();
+  const { user, login, switchUser, isLoading } = useAuth();
+  const [isDemoLoading, setIsDemoLoading] = useState(false);
 
-  useEffect(() => {
-    if (!isLoading && !user) {
-      router.replace("/login");
+  const handleTryDemo = async () => {
+    setIsDemoLoading(true);
+    try {
+      await login("demo.student@sahayak.edu", "DemoStudent2026!");
+      router.push("/lesson/session-demo-photosynthesis");
+    } catch {
+      const demoPreset = PRESET_USERS.find(p => p.id === "user-demo-student") || PRESET_USERS[0];
+      await switchUser(demoPreset);
+      router.push("/lesson/session-demo-photosynthesis");
+    } finally {
+      setIsDemoLoading(false);
     }
-  }, [user, isLoading, router]);
-
-  if (isLoading || !user) {
-    return (
-      <div className="min-h-[60vh] flex items-center justify-center">
-        <div className="w-8 h-8 border-2 border-primary border-t-transparent rounded-full animate-spin" />
-      </div>
-    );
-  }
+  };
 
   return (
     <div className="max-w-7xl w-full mx-auto px-4 sm:px-6 lg:px-8 py-6 space-y-16 pb-16">
@@ -46,7 +48,7 @@ export default function LandingPage() {
 
         <div className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-[#E9F1FC] border border-blue-200 text-xs font-bold text-primary mb-6 shadow-2xs">
           <span className="w-2 h-2 rounded-full bg-primary animate-pulse"></span>
-          AI Innovation Hackathon 2026 · Adaptive AI Educator
+          Open Innovation Hackathon 2026 · Adaptive AI Educator
         </div>
 
         <h1 className="text-4xl sm:text-6xl font-extrabold tracking-tight text-black max-w-4xl mx-auto leading-tight sm:leading-none">
@@ -57,17 +59,36 @@ export default function LandingPage() {
         </h1>
 
         <p className="mt-6 text-base sm:text-lg text-ink-secondary max-w-2xl mx-auto leading-relaxed font-medium">
-          Sahayak AI Teacher executes full pedagogical cycles: understand, plan, explain, demonstrate, question, evaluate, and dynamically adapt on misconceptions with fresh analogies.
+          Sahayak AI Teacher executes full pedagogical cycles: understand, plan, explain, demonstrate, question, evaluate, and dynamically adapt on misconceptions with fresh analogies. Grounded in real textbook materials.
         </p>
 
-        {/* Dual Primary Actions */}
-        <div className="mt-10 flex flex-col sm:flex-row items-center justify-center gap-4 max-w-md mx-auto">
+        {/* Primary Actions: Try Demo (Judge One-Click) + Ingestion */}
+        <div className="mt-10 flex flex-col sm:flex-row items-center justify-center gap-4 max-w-xl mx-auto">
+          <button
+            onClick={handleTryDemo}
+            disabled={isDemoLoading}
+            id="try-demo-btn"
+            className="w-full sm:w-auto flex items-center justify-center gap-2.5 px-7 py-3.5 rounded bg-primary hover:bg-blue-700 text-white font-bold text-sm shadow-md transition-all hover:scale-[1.02] active:scale-[0.98] group cursor-pointer"
+          >
+            {isDemoLoading ? (
+              <>
+                <Loader2 className="w-5 h-5 animate-spin" />
+                <span>Launching Demo Lesson...</span>
+              </>
+            ) : (
+              <>
+                <PlayCircle className="w-5 h-5 text-white group-hover:scale-110 transition-transform" />
+                <span>⚡ Try Demo (One-Click Judge Access)</span>
+              </>
+            )}
+          </button>
+
           <Link
             href="/upload"
             className="w-full sm:w-auto flex items-center justify-center gap-2.5 px-6 py-3.5 rounded bg-black hover:bg-neutral-800 text-white font-bold text-sm shadow-md transition-all hover:scale-[1.02] active:scale-[0.98] group"
           >
             <UploadCloud className="w-5 h-5 group-hover:-translate-y-0.5 transition-transform" />
-            <span>Upload Learning Material</span>
+            <span>Upload Material</span>
           </Link>
 
           <Link
@@ -75,7 +96,7 @@ export default function LandingPage() {
             className="w-full sm:w-auto flex items-center justify-center gap-2.5 px-6 py-3.5 rounded bg-white border-2 border-primary text-primary hover:bg-[#E9F1FC] font-bold text-sm transition-all hover:scale-[1.02] active:scale-[0.98]"
           >
             <BookOpen className="w-5 h-5 text-primary" />
-            <span>Teach Me Any Topic</span>
+            <span>Teach Topic</span>
           </Link>
         </div>
 

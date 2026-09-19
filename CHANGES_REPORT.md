@@ -89,3 +89,32 @@ This document logs all baseline findings, discrepancy audits, implementation cha
 
 ---
 
+## Phase 2: One-Click Judge Demo & Deployment Readiness
+
+### 1. Implementation Details
+* **Public-Domain Science Sample Chapter (`samples/photosynthesis_chapter.pdf`)**:
+  * Generated a structured, high-fidelity vector PDF with matplotlib `PdfPages`:
+    * Page 1: Chapter 1: Bio-Energetics of Life & Light-Dependent Reactions (photolysis, electron transport, chlorophyll absorption vs reflection).
+    * Page 2: Chapter 2: The Calvin Cycle & Carbon Fixation (RuBisCO enzyme, reduction, regeneration).
+    * Page 3: Chapter 3: Cellular Respiration & ATP Production (glycolysis, Krebs cycle, chemiosmotic ATP synthesis).
+* **Idempotent Seed Script (`backend/scripts/seed_demo.py`)**:
+  * Creates or verifies `demo.student@sahayak.edu` (`user-demo-student`) with password `DemoStudent2026!`.
+  * Automatically parses and embeds `samples/photosynthesis_chapter.pdf` into `DBMaterial` and `DBMaterialChunk`s with 768-dim embeddings.
+  * Seeds pre-generated grounded lesson session `session-demo-photosynthesis` with 3 comprehensive pedagogical segments, blackboard visuals, and Bloom's checkpoint questions.
+  * Fully idempotent: safe to run multiple times without duplicating entries.
+* **One-Click "Try Demo" Integration (`frontend/src/app/page.tsx` & `login/page.tsx`)**:
+  * Added prominent "⚡ Try Demo (One-Click Judge Access)" button on both the landing page hero and the login portal.
+  * Authenticates as demo student without requiring sign-up or typing credentials, and redirects immediately to `/lesson/session-demo-photosynthesis`.
+  * Removed forced redirect on `/` so unauthenticated evaluators can immediately view the landing page and trigger the demo.
+* **Production Deployment Guide (`DEPLOY_CHECKLIST.md`)**:
+  * Documented exact steps for Railway (backend + Docker + FFmpeg), Vercel (frontend), and Supabase (PostgreSQL 16/17 + pgvector).
+  * Provided complete environment variable configuration table and 6-step post-deployment smoke test protocol.
+  * Documented zero-key graceful degradation matrix across LLM, embeddings, TTS, STT, avatar, and video.
+
+### 2. Verification
+* **Frontend Build**: `npm run build` compiled successfully in 9.9s with 0 TypeScript/lint errors across all 12 routes.
+* **Seed Script Execution**: Executed `backend/scripts/seed_demo.py`; seeded user, 3-chunk grounded document, and pre-generated lesson session in under 2 seconds.
+
+---
+
+

@@ -25,6 +25,15 @@ interface AuthContextType {
 
 export const PRESET_USERS: UserSession[] = [
   {
+    id: "user-demo-student",
+    name: "Judge Demo Student",
+    email: "demo.student@sahayak.edu",
+    role: "student",
+    level: "intermediate",
+    avatar: "https://images.unsplash.com/photo-1534528741775-53994a69daeb?q=80&w=200&auto=format&fit=crop",
+    joinedDate: "Mar 2026",
+  },
+  {
     id: "user-pranjal",
     name: "Pranjal Mishra",
     email: "pranjal@sahayak.edu",
