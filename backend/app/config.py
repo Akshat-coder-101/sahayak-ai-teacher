@@ -27,6 +27,7 @@ class Settings(BaseSettings):
     
     # Embedding / RAG
     EMBEDDING_PROVIDER: str = os.getenv("EMBEDDING_PROVIDER", "gemini")  # gemini | deterministic
+    GEMINI_EMBEDDING_MODEL: str = os.getenv("GEMINI_EMBEDDING_MODEL", "gemini-embedding-001")
     
     # TTS
     ELEVENLABS_API_KEY: str = os.getenv("ELEVENLABS_API_KEY", "")

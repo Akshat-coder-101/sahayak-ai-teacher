@@ -47,38 +47,42 @@ class EmbeddingService:
     @classmethod
     def get_embedding(cls, text: str) -> List[float]:
         """
-        Retrieves 768-dim embedding via Gemini text-embedding-004 if configured,
-        or falls back to deterministic SHA-256 embedding.
+        Retrieves 768-dim semantic neural embedding via Gemini (gemini-embedding-001 with output_dimensionality=768)
+        when online, or gracefully falls back to deterministic offline pseudo-embeddings if the API quota is exhausted.
         """
         cleaned = text.strip()[:2048]
         if not cleaned:
             return [0.0] * 768
 
-        # 1. Try Gemini text-embedding-004 REST
+        # 1. Primary: Production Gemini Semantic Neural Embeddings
         if (
             settings.GEMINI_API_KEY and 
             len(settings.GEMINI_API_KEY.strip()) > 5 and 
             settings.EMBEDDING_PROVIDER.lower() == "gemini"
         ):
-            try:
-                endpoint = f"https://generativelanguage.googleapis.com/v1beta/models/text-embedding-004:embedContent?key={settings.GEMINI_API_KEY}"
-                payload = {
-                    "model": "models/text-embedding-004",
-                    "content": {
-                        "parts": [{"text": cleaned}]
+            model_name = getattr(settings, "GEMINI_EMBEDDING_MODEL", "gemini-embedding-001")
+            for target_model in [model_name, "gemini-embedding-001", "text-embedding-004"]:
+                try:
+                    endpoint = f"https://generativelanguage.googleapis.com/v1beta/models/{target_model}:embedContent?key={settings.GEMINI_API_KEY}"
+                    payload = {
+                        "model": f"models/{target_model}",
+                        "content": {
+                            "parts": [{"text": cleaned}]
+                        },
+                        "output_dimensionality": 768
                     }
-                }
-                with httpx.Client(timeout=10.0) as client:
-                    resp = client.post(endpoint, json=payload)
-                    if resp.status_code == 200:
-                        data = resp.json()
-                        values = data.get("embedding", {}).get("values", [])
-                        if values and len(values) == 768:
-                            return values
-            except Exception as e:
-                logger.warning(f"[EmbeddingService] Gemini embedding call failed ({e}); falling back to deterministic SHA-256.")
+                    with httpx.Client(timeout=10.0) as client:
+                        resp = client.post(endpoint, json=payload)
+                        if resp.status_code == 200:
+                            data = resp.json()
+                            values = data.get("embedding", {}).get("values", [])
+                            if values and len(values) == 768:
+                                return values
+                except Exception as e:
+                    logger.debug(f"[EmbeddingService] Attempt with {target_model} failed: {e}")
+            logger.warning("[EmbeddingService] Gemini neural embedding API exhausted/unavailable; engaging offline deterministic fallback.")
 
-        # 2. Deterministic SHA-256 fallback
+        # 2. Offline Fallback: Deterministic pseudo-embedding for network resilience
         return cls._deterministic_sha256_embedding(cleaned, dim=768)
 
 
