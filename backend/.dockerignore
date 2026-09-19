@@ -1,0 +1,35 @@
+# Keep secrets, local runtime artifacts, and dev cruft out of the image.
+.env
+.env.*
+!.env.example
+
+# Python caches / build output
+__pycache__/
+*.pyc
+*.pyo
+*.egg-info/
+.pytest_cache/
+build/
+dist/
+
+# Local databases and generated/user content (persisted via a mounted volume instead)
+*.db
+sahayak.db
+data/
+generated_media/
+uploaded_docs/
+
+# Virtual envs
+venv/
+.venv/
+env/
+
+# Tests and ad-hoc scripts not needed at runtime
+tests/
+test_live_apis.py
+
+# VCS / editor
+.git/
+.gitignore
+.idea/
+.vscode/
