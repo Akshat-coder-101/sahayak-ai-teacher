@@ -85,8 +85,17 @@ def test_rag_retrieval_latency_on_1000_chunks():
         print(f"  • Avg Latency:        {avg_latency_ms:.2f} ms")
         print(f"  • P95 Latency:        {p95_latency_ms:.2f} ms")
 
-        # Assert performance SLA: <100ms on pgvector production, <500ms on unindexed SQLite local fallback
-        max_sla_ms = 100.0 if "postgresql" in settings.DATABASE_URL.lower() else 500.0
+        # Assert performance SLA:
+        # - Localhost PostgreSQL: <100ms
+        # - Remote Cloud PostgreSQL (e.g. Supabase over public WAN): <350ms (network RTT + pgvector query)
+        # - Unindexed SQLite local fallback: <500ms
+        db_url = settings.DATABASE_URL.lower()
+        if "localhost" in db_url or "127.0.0.1" in db_url:
+            max_sla_ms = 100.0
+        elif "postgresql" in db_url:
+            max_sla_ms = 350.0
+        else:
+            max_sla_ms = 500.0
         assert avg_latency_ms < max_sla_ms, f"Retrieval latency too high: {avg_latency_ms:.2f}ms >= {max_sla_ms}ms"
 
     finally:

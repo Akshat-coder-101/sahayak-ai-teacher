@@ -41,9 +41,13 @@ import {
   Radio,
   Maximize2,
   Minimize2,
-  ChevronDown,
-  ChevronUp,
-  LayoutGrid
+  ChevronDown, 
+  ChevronUp, 
+  LayoutGrid,
+  Film,
+  Loader2,
+  X,
+  Download
 } from "lucide-react";
 
 interface TeacherPlayerProps {
@@ -94,6 +98,90 @@ export default function TeacherPlayer({
   const [mediaDisplayMode, setMediaDisplayMode] = useState<"avatar" | "video">("avatar");
   const [isTranscriptExpanded, setIsTranscriptExpanded] = useState<boolean>(false);
   const [playbackRate, setPlaybackRate] = useState<number>(1.0);
+
+  // Video Generation & Export Modal State
+  const [isVideoModalOpen, setIsVideoModalOpen] = useState<boolean>(false);
+  const [videoGenMode, setVideoGenMode] = useState<"demo" | "full">("demo");
+  const [isGeneratingVideo, setIsGeneratingVideo] = useState<boolean>(false);
+  const [videoJobId, setVideoJobId] = useState<string | null>(null);
+  const [videoProgress, setVideoProgress] = useState<number>(0);
+  const [videoCurrentStep, setVideoCurrentStep] = useState<string>("");
+  const [videoResultUrl, setVideoResultUrl] = useState<string | null>(null);
+  const [videoError, setVideoError] = useState<string | null>(null);
+  const videoPollInterval = useRef<NodeJS.Timeout | null>(null);
+
+  // Auto-switch to video mode when video is ready or provided
+  useEffect(() => {
+    if (segment.video_url) {
+      setMediaDisplayMode("video");
+    }
+  }, [segment.video_url]);
+
+  // Clean up video polling on unmount
+  useEffect(() => {
+    return () => {
+      if (videoPollInterval.current) {
+        clearInterval(videoPollInterval.current);
+      }
+    };
+  }, []);
+
+  const handleStartVideoGeneration = async () => {
+    try {
+      setIsGeneratingVideo(true);
+      setVideoError(null);
+      setVideoProgress(5);
+      setVideoCurrentStep("Initializing lecture synthesis pipeline...");
+      setVideoResultUrl(null);
+
+      const res = await api.generateVideo({
+        topic: segment.concept || "Educational Topic",
+        session_id: segment.session_id,
+        mode: videoGenMode,
+        language: activeLanguage,
+      });
+
+      setVideoJobId(res.job_id);
+      setVideoCurrentStep(`Video lecture generation enqueued in ${videoGenMode.toUpperCase()} mode...`);
+
+      if (videoPollInterval.current) clearInterval(videoPollInterval.current);
+      videoPollInterval.current = setInterval(async () => {
+        try {
+          const statusRes = await api.getVideoStatus(res.job_id);
+          setVideoProgress(statusRes.progress);
+          if (statusRes.current_step) setVideoCurrentStep(statusRes.current_step);
+
+          if (statusRes.status === "completed" && statusRes.video_url) {
+            if (videoPollInterval.current) clearInterval(videoPollInterval.current);
+            setIsGeneratingVideo(false);
+            setVideoResultUrl(statusRes.video_url);
+            showSuccess("Video lecture synthesized successfully!");
+          } else if (statusRes.status === "failed") {
+            if (videoPollInterval.current) clearInterval(videoPollInterval.current);
+            setIsGeneratingVideo(false);
+            setVideoError(statusRes.error_message || "Video generation failed.");
+            showError(statusRes.error_message || "Video generation failed.");
+          }
+        } catch (err: any) {
+          console.warn("[TeacherPlayer] Polling video status error:", err);
+        }
+      }, 1800);
+    } catch (err: any) {
+      setIsGeneratingVideo(false);
+      setVideoError(err.message || "Failed to start video generation");
+      showError(err.message || "Failed to start video generation");
+    }
+  };
+
+  const handleApplyVideoToPlayer = (url: string) => {
+    setSegment((prev) => ({
+      ...prev,
+      video_url: url,
+    }));
+    setMediaDisplayMode("video");
+    setIsVideoModalOpen(false);
+    showSuccess("Switched player to rendered video lecture!");
+  };
 
   const audioRef = useRef<HTMLAudioElement | null>(null);
   const videoRef = useRef<HTMLVideoElement | null>(null);
@@ -812,6 +900,16 @@ export default function TeacherPlayer({
                   </div>
 
                   <div className="flex items-center gap-2">
+                    {/* Generate Video Lecture Modal Trigger */}
+                    <button
+                      onClick={() => setIsVideoModalOpen(true)}
+                      className="px-2.5 py-1 rounded-md bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-500 hover:to-indigo-500 text-white border border-blue-400/30 text-xs font-semibold flex items-center gap-1.5 transition-all shadow-md active:scale-95 cursor-pointer"
+                      title="Generate Full Video Lecture (Demo / Full)"
+                    >
+                      <Film className="w-3.5 h-3.5 text-blue-200" />
+                      <span className="hidden sm:inline">Generate Video</span>
+                    </button>
+
                     {/* Mode Toggle Button if video is available */}
                     {segment.video_url && (
                       <button
@@ -1206,6 +1304,14 @@ export default function TeacherPlayer({
                       AI Teacher Synced
                     </span>
                     <div className="flex items-center gap-1.5">
+                      <button
+                        onClick={() => setIsVideoModalOpen(true)}
+                        className="px-2 py-0.5 rounded bg-gradient-to-r from-blue-600 to-indigo-600 text-white text-[10px] font-bold shadow-xs active:scale-95 flex items-center gap-1 cursor-pointer"
+                        title="Generate Video Lecture"
+                      >
+                        <Film className="w-3 h-3 text-blue-200" />
+                        <span>Gen Video</span>
+                      </button>
                       {segment.video_url && (
                         <button
                           onClick={() => setMediaDisplayMode(mediaDisplayMode === "avatar" ? "video" : "avatar")}
@@ -1475,6 +1581,165 @@ export default function TeacherPlayer({
           interaction={misconceptionData}
           onContinueReteach={handleContinueReteach}
         />
+      )}
+
+      {/* AI Video Lecture Generator Modal */}
+      {isVideoModalOpen && (
+        <div className="fixed inset-0 z-50 bg-black/75 backdrop-blur-sm flex items-center justify-center p-4 animate-in fade-in duration-200">
+          <div className="max-w-lg w-full bg-white dark:bg-neutral-900 rounded-2xl shadow-2xl border border-neutral-200 dark:border-neutral-800 overflow-hidden">
+            {/* Header */}
+            <div className="p-5 bg-gradient-to-r from-blue-600 to-indigo-600 text-white flex items-center justify-between">
+              <div className="flex items-center gap-3">
+                <div className="w-9 h-9 rounded-xl bg-white/20 backdrop-blur-md flex items-center justify-center">
+                  <Film className="w-5 h-5 text-white" />
+                </div>
+                <div>
+                  <h3 className="text-base font-bold">Generate AI Video Lecture</h3>
+                  <p className="text-xs text-blue-100">Zero-cost FFmpeg multi-scene stream synthesis</p>
+                </div>
+              </div>
+              <button
+                onClick={() => {
+                  if (!isGeneratingVideo) setIsVideoModalOpen(false);
+                }}
+                disabled={isGeneratingVideo}
+                className="p-1 rounded-lg hover:bg-white/20 text-white transition-colors disabled:opacity-50 cursor-pointer"
+              >
+                <X className="w-5 h-5" />
+              </button>
+            </div>
+
+            {/* Body */}
+            <div className="p-6 space-y-5">
+              <div className="p-3.5 rounded-xl bg-blue-50 dark:bg-blue-950/40 border border-blue-100 dark:border-blue-900 text-xs">
+                <span className="font-semibold text-blue-900 dark:text-blue-300">Topic:</span>{" "}
+                <span className="text-blue-700 dark:text-blue-400">{segment.concept || "Current Curriculum Lesson"}</span>
+              </div>
+
+              {!isGeneratingVideo && !videoResultUrl && (
+                <>
+                  {/* Mode Selection */}
+                  <div className="space-y-2">
+                    <label className="text-xs font-bold text-neutral-700 dark:text-neutral-300 uppercase tracking-wider">
+                      Select Generation Mode:
+                    </label>
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                      <button
+                        type="button"
+                        onClick={() => setVideoGenMode("demo")}
+                        className={`p-3.5 rounded-xl border-2 text-left transition-all cursor-pointer ${
+                          videoGenMode === "demo"
+                            ? "border-blue-600 bg-blue-50/70 dark:bg-blue-950/30 text-blue-900 dark:text-blue-200 shadow-sm"
+                            : "border-neutral-200 dark:border-neutral-800 hover:border-neutral-300 text-neutral-700 dark:text-neutral-300"
+                        }`}
+                      >
+                        <div className="flex items-center gap-1.5 font-bold text-xs">
+                          <span>⚡ Quick Demo Mode</span>
+                        </div>
+                        <p className="text-[11px] text-neutral-500 dark:text-neutral-400 mt-1 leading-snug">
+                          ~2–3 mins • 2 parallel scenes • Fast stream copy. Perfect for hackathon evaluation.
+                        </p>
+                      </button>
+
+                      <button
+                        type="button"
+                        onClick={() => setVideoGenMode("full")}
+                        className={`p-3.5 rounded-xl border-2 text-left transition-all cursor-pointer ${
+                          videoGenMode === "full"
+                            ? "border-blue-600 bg-blue-50/70 dark:bg-blue-950/30 text-blue-900 dark:text-blue-200 shadow-sm"
+                            : "border-neutral-200 dark:border-neutral-800 hover:border-neutral-300 text-neutral-700 dark:text-neutral-300"
+                        }`}
+                      >
+                        <div className="flex items-center gap-1.5 font-bold text-xs">
+                          <span>🎓 Full Lecture Mode</span>
+                        </div>
+                        <p className="text-[11px] text-neutral-500 dark:text-neutral-400 mt-1 leading-snug">
+                          ~15 mins • Comprehensive chapter coverage • Background async worker.
+                        </p>
+                      </button>
+                    </div>
+                  </div>
+
+                  {videoError && (
+                    <div className="p-3 rounded-xl bg-red-50 dark:bg-red-950/40 border border-red-200 text-red-700 dark:text-red-300 text-xs">
+                      {videoError}
+                    </div>
+                  )}
+
+                  <button
+                    onClick={handleStartVideoGeneration}
+                    className="w-full py-3 rounded-xl bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 text-white font-bold text-sm shadow-md transition-all flex items-center justify-center gap-2 cursor-pointer hover:scale-[1.01] active:scale-[0.99]"
+                  >
+                    <Film className="w-4 h-4" />
+                    <span>Synthesize {videoGenMode === "demo" ? "Quick Demo Video" : "Full Lecture Video"}</span>
+                  </button>
+                </>
+              )}
+
+              {/* In Progress */}
+              {isGeneratingVideo && (
+                <div className="space-y-4 py-4 text-center">
+                  <div className="relative w-16 h-16 mx-auto flex items-center justify-center">
+                    <Loader2 className="w-12 h-12 text-blue-600 animate-spin" />
+                    <Film className="w-5 h-5 text-indigo-600 absolute" />
+                  </div>
+                  <div>
+                    <h4 className="font-bold text-sm text-neutral-900 dark:text-white">Synthesizing Lecture Video</h4>
+                    <p className="text-xs text-neutral-500 dark:text-neutral-400 mt-1">{videoCurrentStep || "Processing scenes in parallel..."}</p>
+                  </div>
+
+                  {/* Progress Bar */}
+                  <div className="space-y-1.5 max-w-sm mx-auto">
+                    <div className="w-full h-3 rounded-full bg-neutral-100 dark:bg-neutral-800 overflow-hidden border border-neutral-200 dark:border-neutral-700 p-0.5">
+                      <div
+                        className="h-full rounded-full bg-gradient-to-r from-blue-500 to-indigo-600 transition-all duration-500"
+                        style={{ width: `${Math.max(5, videoProgress)}%` }}
+                      />
+                    </div>
+                    <div className="flex justify-between text-[11px] font-mono font-semibold text-neutral-500">
+                      <span>{videoGenMode.toUpperCase()} MODE</span>
+                      <span>{videoProgress}%</span>
+                    </div>
+                  </div>
+                </div>
+              )}
+
+              {/* Complete */}
+              {videoResultUrl && (
+                <div className="space-y-4 py-3 text-center">
+                  <div className="w-12 h-12 rounded-full bg-emerald-100 dark:bg-emerald-950/50 text-emerald-600 flex items-center justify-center mx-auto">
+                    <CheckCircle className="w-6 h-6" />
+                  </div>
+                  <div>
+                    <h4 className="font-bold text-sm text-neutral-900 dark:text-white">Video Lecture Ready!</h4>
+                    <p className="text-xs text-neutral-500 dark:text-neutral-400 mt-1">
+                      Rendered with high-resolution blackboard slides, LaTeX formulas, and synchronized audio.
+                    </p>
+                  </div>
+
+                  <div className="flex flex-col sm:flex-row gap-3 pt-2">
+                    <button
+                      onClick={() => handleApplyVideoToPlayer(videoResultUrl)}
+                      className="flex-1 py-2.5 rounded-xl bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 text-white font-bold text-xs shadow-md transition-all flex items-center justify-center gap-1.5 cursor-pointer"
+                    >
+                      <Play className="w-3.5 h-3.5 fill-white" />
+                      <span>Play in Player Now</span>
+                    </button>
+
+                    <a
+                      href={videoResultUrl.startsWith("http") ? videoResultUrl : `${apiBaseUrl}${videoResultUrl}`}
+                      download="sahayak_lecture.mp4"
+                      className="flex-1 py-2.5 rounded-xl border border-neutral-300 dark:border-neutral-700 hover:bg-neutral-50 dark:hover:bg-neutral-800 text-neutral-700 dark:text-neutral-200 font-bold text-xs transition-all flex items-center justify-center gap-1.5"
+                    >
+                      <Download className="w-3.5 h-3.5" />
+                      <span>Download MP4</span>
+                    </a>
+                  </div>
+                </div>
+              )}
+            </div>
+          </div>
+        </div>
       )}
     </div>
   );
