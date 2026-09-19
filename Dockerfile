@@ -1,4 +1,4 @@
-# Production Dockerfile for Sahayak AI Teacher backend (context: backend/)
+# Root Dockerfile for Railway / Cloud Container Deployments
 FROM python:3.11-slim
 
 # System dependencies:
@@ -17,13 +17,13 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
 WORKDIR /app
 
 # Copy backend source
-COPY . /app/
+COPY backend/ /app/
 
-# Install python dependencies from requirements.txt
+# Install python dependencies
 RUN pip install --no-cache-dir --upgrade pip && \
     pip install --no-cache-dir -r requirements.txt
 
-# Create storage directories
+# Create persistent storage directories
 RUN mkdir -p /app/data/media /app/data/docs /app/data/video_cache
 
 ENV PYTHONPATH=/app \
