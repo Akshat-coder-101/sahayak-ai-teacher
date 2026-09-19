@@ -1,0 +1,8 @@
+[tool.pyright]
+include = ["backend"]
+extraPaths = ["backend", "backend/app"]
+typeCheckingMode = "basic"
+
+[tool.pytest.ini_options]
+pythonpath = ["backend"]
+testpaths = ["backend/tests"]

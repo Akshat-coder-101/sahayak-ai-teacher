@@ -1,0 +1,72 @@
+# Environment files
+.env
+.env.local
+.env.*.local
+
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+env/
+build/
+develop-eggs/
+dist/
+downloads/
+eggs/
+.eggs/
+/lib/
+/lib64/
+parts/
+sdist/
+var/
+wheels/
+*.egg-info/
+.installed.cfg
+*.egg
+.pytest_cache/
+.coverage
+htmlcov/
+venv/
+.venv/
+ENV/
+
+# Node / Next.js
+node_modules/
+.next/
+out/
+.pnp
+.pnp.js
+coverage/
+*.tsbuildinfo
+next-env.d.ts
+
+# SQLite database
+*.db
+*.sqlite3
+
+# IDE / OS
+.DS_Store
+Thumbs.db
+.idea/
+.vscode/
+
+# Media & document storage
+backend/generated_media/
+generated_media/
+backend/uploaded_docs/
+uploaded_docs/
+*.mp4
+*.mp3
+*.wav
+*.srt
+*.png_plot.png
+
+
+# Neural Voice Models (auto-downloaded on first run)
+backend/models/
+*.onnx
+*.onnx.json
+SIH_IMPACT_AND_BENEFITS.md
+
