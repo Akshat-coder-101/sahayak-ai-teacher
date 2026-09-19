@@ -1,4 +1,5 @@
 import uuid
+import re
 from typing import Optional, Any, Dict
 from pydantic import BaseModel, Field
 from fastapi import APIRouter, Depends, HTTPException, status, Response, Request
@@ -14,9 +15,44 @@ from ..services.auth import (
 
 router = APIRouter(prefix="/auth", tags=["Authentication & Access Control"])
 
+def validate_password_format(password: str) -> None:
+    """
+    Enforces strong password format:
+    - At least 8 characters
+    - At least one uppercase letter
+    - At least one lowercase letter
+    - At least one digit
+    - At least one special symbol
+    """
+    if not password or len(password) < 8:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Password must be at least 8 characters long."
+        )
+    if not re.search(r"[A-Z]", password):
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Password must contain at least one uppercase letter (A-Z)."
+        )
+    if not re.search(r"[a-z]", password):
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Password must contain at least one lowercase letter (a-z)."
+        )
+    if not re.search(r"\d", password):
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Password must contain at least one number (0-9)."
+        )
+    if not re.search(r"[!@#$%^&*(),.?\":{}|<>\-_+=\[\]\\\/~`]", password):
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Password must contain at least one special character (e.g. !@#$%^&*)."
+        )
+
 class RegisterRequest(BaseModel):
     email: str
-    password: str = Field(..., min_length=4)
+    password: str = Field(..., min_length=8)
     name: Optional[str] = "Learner"
     role: str = "student"  # "student" | "teacher"
     level: Optional[str] = "intermediate"
@@ -58,6 +94,9 @@ def register_user(
     
     if req.role not in ["student", "teacher"]:
         raise HTTPException(status_code=400, detail="Role must be 'student' or 'teacher'.")
+
+    # Enforce strong password format
+    validate_password_format(req.password)
 
     existing = db.query(DBUser).filter(DBUser.email == normalized_email).first()
     if existing:

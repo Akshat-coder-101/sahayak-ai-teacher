@@ -2,6 +2,7 @@ import type { Metadata, Viewport } from "next";
 import "./globals.css";
 import Navbar from "@/components/Navbar";
 import Footer from "@/components/Footer";
+import RouteGuard from "@/components/RouteGuard";
 import { AuthProvider } from "@/context/AuthContext";
 import { ToastProvider } from "@/context/ToastContext";
 
@@ -58,11 +59,13 @@ export default function RootLayout({
       <body className="min-h-screen flex flex-col bg-white text-ink-primary antialiased selection:bg-primary-soft selection:text-primary overflow-x-hidden">
         <AuthProvider>
           <ToastProvider>
-            <Navbar />
-            <main className="flex-1 w-full flex flex-col overflow-x-hidden">
-              {children}
-            </main>
-            <Footer />
+            <RouteGuard>
+              <Navbar />
+              <main className="flex-1 w-full flex flex-col overflow-x-hidden">
+                {children}
+              </main>
+              <Footer />
+            </RouteGuard>
           </ToastProvider>
         </AuthProvider>
       </body>

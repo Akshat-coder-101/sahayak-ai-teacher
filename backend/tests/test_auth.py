@@ -33,9 +33,36 @@ def test_unauthenticated_request_to_protected_route_fails_401():
     resp = unauth_client.post("/api/sandbox/run", json={"code": "print('hello')"})
     assert resp.status_code == 401
 
+def test_password_format_validation():
+    test_email = f"student_{uuid.uuid4().hex[:8]}@sahayak.edu"
+    
+    # 1. Too short
+    r1 = client.post("/api/auth/register", json={"email": test_email, "password": "Sh1!"})
+    assert r1.status_code in [400, 422]
+    
+    # 2. Missing uppercase
+    r2 = client.post("/api/auth/register", json={"email": test_email, "password": "lowercase123!"})
+    assert r2.status_code == 400
+    assert "uppercase" in r2.text.lower()
+
+    # 3. Missing lowercase
+    r3 = client.post("/api/auth/register", json={"email": test_email, "password": "UPPERCASE123!"})
+    assert r3.status_code == 400
+    assert "lowercase" in r3.text.lower()
+
+    # 4. Missing number
+    r4 = client.post("/api/auth/register", json={"email": test_email, "password": "NoNumbersHere!"})
+    assert r4.status_code == 400
+    assert "number" in r4.text.lower()
+
+    # 5. Missing special character
+    r5 = client.post("/api/auth/register", json={"email": test_email, "password": "NoSpecialChar123"})
+    assert r5.status_code == 400
+    assert "special character" in r5.text.lower()
+
 def test_user_registration_and_login():
     test_email = f"student_{uuid.uuid4().hex[:8]}@sahayak.edu"
-    test_pwd = "safePassword123"
+    test_pwd = "safePassword123!"
 
     # 1. Register new student
     reg_resp = client.post("/api/auth/register", json={

@@ -93,44 +93,13 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
           } catch {
             // Token expired or invalid
             setAuthToken(null);
+            localStorage.removeItem("sahayak_user_session");
           }
         }
 
-        // Auto-authenticate default preset user (Pranjal Mishra) if no valid token exists
-        try {
-          const resp = await api.login("pranjal@sahayak.edu", "password123");
-          if (resp?.user && resp?.access_token) {
-            setAuthToken(resp.access_token);
-            const matchedPreset = PRESET_USERS[0];
-            const sessionUser: UserSession = {
-              id: resp.user.id,
-              name: resp.user.name || matchedPreset.name,
-              email: resp.user.email,
-              role: resp.user.role || "student",
-              level: matchedPreset.level,
-              avatar: matchedPreset.avatar,
-              joinedDate: matchedPreset.joinedDate,
-            };
-            setUser(sessionUser);
-            localStorage.setItem("sahayak_user_session", JSON.stringify(sessionUser));
-            return;
-          }
-        } catch {
-          // Fallback if backend offline
-        }
-
-        // Check stored session or preset fallback
-        const saved = localStorage.getItem("sahayak_user_session");
-        if (saved) {
-          try {
-            const parsed = JSON.parse(saved);
-            setUser(parsed);
-          } catch {
-            setUser(PRESET_USERS[0]);
-          }
-        } else {
-          setUser(PRESET_USERS[0]);
-        }
+        // If no valid authenticated session exists, require user to sign in first
+        setUser(null);
+        localStorage.removeItem("sahayak_user_session");
       } finally {
         setIsLoading(false);
       }
@@ -213,9 +182,19 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
   const switchUser = async (presetUser: UserSession) => {
     try {
-      await api.login(presetUser.email, "password123");
+      const resp = await api.login(presetUser.email, "safePassword123!");
+      if (resp?.access_token) {
+        setAuthToken(resp.access_token);
+      }
     } catch {
-      // Local fallback
+      try {
+        const resp = await api.login(presetUser.email, "password123");
+        if (resp?.access_token) {
+          setAuthToken(resp.access_token);
+        }
+      } catch (e) {
+        console.warn("Preset login fallback:", e);
+      }
     }
     setUser(presetUser);
     localStorage.setItem("sahayak_user_session", JSON.stringify(presetUser));

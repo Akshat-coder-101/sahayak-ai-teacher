@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import Image from "next/image";
 import { useRouter } from "next/navigation";
 import { useAuth, PRESET_USERS, UserSession } from "@/context/AuthContext";
@@ -8,13 +8,55 @@ import {
   Sparkles, 
   ArrowRight, 
   CheckCircle2, 
+  XCircle,
   Lock, 
   Mail, 
   User, 
   GraduationCap, 
-  ShieldCheck 
+  ShieldCheck,
+  Eye,
+  EyeOff,
+  KeyRound,
+  Check
 } from "lucide-react";
 import Link from "next/link";
+
+interface PasswordCriteria {
+  length: boolean;
+  hasUpper: boolean;
+  hasLower: boolean;
+  hasNumber: boolean;
+  hasSpecial: boolean;
+}
+
+const checkPasswordCriteria = (pwd: string): PasswordCriteria => {
+  return {
+    length: pwd.length >= 8,
+    hasUpper: /[A-Z]/.test(pwd),
+    hasLower: /[a-z]/.test(pwd),
+    hasNumber: /\d/.test(pwd),
+    hasSpecial: /[!@#$%^&*(),.?":{}|<>\-_+=[\]\\\/~`]/.test(pwd),
+  };
+};
+
+const generateStrongPassword = (): string => {
+  const uppers = "ABCDEFGHJKLMNPQRSTUVWXYZ";
+  const lowers = "abcdefghijkmnpqrstuvwxyz";
+  const digits = "23456789";
+  const specials = "!@#$%&*";
+  
+  let pwd = "";
+  pwd += uppers[Math.floor(Math.random() * uppers.length)];
+  pwd += lowers[Math.floor(Math.random() * lowers.length)];
+  pwd += digits[Math.floor(Math.random() * digits.length)];
+  pwd += specials[Math.floor(Math.random() * specials.length)];
+  
+  const allChars = uppers + lowers + digits + specials;
+  for (let i = 0; i < 8; i++) {
+    pwd += allChars[Math.floor(Math.random() * allChars.length)];
+  }
+  return pwd.split("").sort(() => 0.5 - Math.random()).join("");
+};
 
 export default function LoginPage() {
   const router = useRouter();
@@ -24,24 +66,55 @@ export default function LoginPage() {
   const [name, setName] = useState("");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
+  const [showPassword, setShowPassword] = useState(false);
   const [level, setLevel] = useState<"beginner" | "intermediate" | "advanced">("intermediate");
   const [errorMsg, setErrorMsg] = useState<string | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [copiedNotification, setCopiedNotification] = useState(false);
+
+  // If already logged in, route to dashboard
+  useEffect(() => {
+    if (user) {
+      router.push("/dashboard");
+    }
+  }, [user, router]);
+
+  const criteria = checkPasswordCriteria(password);
+  const passedCriteriaCount = Object.values(criteria).filter(Boolean).length;
+  const isPasswordValid = passedCriteriaCount === 5;
+
+  const handleGeneratePassword = () => {
+    const strong = generateStrongPassword();
+    setPassword(strong);
+    setShowPassword(true);
+    setCopiedNotification(true);
+    setTimeout(() => setCopiedNotification(false), 2500);
+  };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!email) return;
+    if (!email || !password) {
+      setErrorMsg("Please enter both email and password.");
+      return;
+    }
+
+    if (isSignUp && !isPasswordValid) {
+      setErrorMsg("Password does not meet the strong format requirements. Please follow the checklist below.");
+      return;
+    }
+
     setErrorMsg(null);
     setIsSubmitting(true);
     try {
       if (isSignUp) {
-        await register(email, password || "password123", name || undefined, "student", level);
+        await register(email, password, name || undefined, "student", level);
       } else {
-        await login(email, password || "password123", name || undefined, level);
+        await login(email, password, name || undefined, level);
       }
       router.push("/dashboard");
     } catch (err: any) {
-      setErrorMsg(err.message || "Authentication failed. Please check your credentials.");
+      const msg = err.message || err.detail || "Authentication failed. Please check your credentials.";
+      setErrorMsg(msg);
     } finally {
       setIsSubmitting(false);
     }
@@ -53,17 +126,18 @@ export default function LoginPage() {
   };
 
   return (
-    <div className="max-w-4xl mx-auto space-y-8 pb-12">
+    <div className="max-w-4xl mx-auto space-y-8 pb-12 pt-4">
       {/* Header */}
       <div className="text-center max-w-lg mx-auto">
-        <span className="text-xs font-bold uppercase tracking-wider text-primary">
-          Sahayak Authentication
-        </span>
+        <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-[#E9F1FC] border border-blue-200 text-xs font-bold text-primary mb-3">
+          <ShieldCheck className="w-3.5 h-3.5 text-primary" />
+          <span>JWT Secure Authentication · HS256 Token Session</span>
+        </div>
         <h1 className="text-3xl font-extrabold text-black mt-1">
-          {isSignUp ? "Create Learner Account" : "Welcome to Sahayak"}
+          {isSignUp ? "Create Learner Account" : "Sign In to Sahayak"}
         </h1>
-        <p className="text-xs text-ink-muted mt-1 font-medium">
-          Access personalized adaptive curricula, synchronized AI lessons, and persistent mastery analytics.
+        <p className="text-xs text-ink-muted mt-1.5 font-medium leading-relaxed">
+          Access your personalized adaptive AI teacher, learning history, and persistent Supabase mastery metrics.
         </p>
       </div>
 
@@ -74,7 +148,10 @@ export default function LoginPage() {
           <div className="flex border-b border-border pb-3">
             <button
               type="button"
-              onClick={() => setIsSignUp(false)}
+              onClick={() => {
+                setIsSignUp(false);
+                setErrorMsg(null);
+              }}
               className={`flex-1 text-center py-2 text-sm font-bold transition-colors ${
                 !isSignUp
                   ? "text-primary border-b-2 border-primary -mb-3.5"
@@ -85,7 +162,10 @@ export default function LoginPage() {
             </button>
             <button
               type="button"
-              onClick={() => setIsSignUp(true)}
+              onClick={() => {
+                setIsSignUp(true);
+                setErrorMsg(null);
+              }}
               className={`flex-1 text-center py-2 text-sm font-bold transition-colors ${
                 isSignUp
                   ? "text-primary border-b-2 border-primary -mb-3.5"
@@ -140,20 +220,105 @@ export default function LoginPage() {
             </div>
 
             <div>
-              <label className="text-xs font-bold text-black uppercase tracking-wider block mb-1.5">
-                Password
-              </label>
+              <div className="flex items-center justify-between mb-1.5">
+                <label className="text-xs font-bold text-black uppercase tracking-wider block">
+                  Password
+                </label>
+                {isSignUp && (
+                  <button
+                    type="button"
+                    onClick={handleGeneratePassword}
+                    className="inline-flex items-center gap-1 text-[11px] font-bold text-primary hover:text-primary-dark transition-colors"
+                  >
+                    <KeyRound className="w-3 h-3 text-primary" />
+                    <span>Generate Strong Password</span>
+                  </button>
+                )}
+              </div>
               <div className="relative">
                 <Lock className="w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2 text-ink-muted" />
                 <input
-                  type="password"
+                  type={showPassword ? "text" : "password"}
                   required
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
                   placeholder="••••••••••••"
-                  className="w-full text-xs pl-9 pr-3 py-2.5 rounded bg-white border border-border text-black placeholder-ink-muted focus:outline-none focus:border-primary font-medium"
+                  className="w-full text-xs pl-9 pr-10 py-2.5 rounded bg-white border border-border text-black placeholder-ink-muted focus:outline-none focus:border-primary font-medium"
                 />
+                <button
+                  type="button"
+                  onClick={() => setShowPassword(!showPassword)}
+                  className="absolute right-3 top-1/2 -translate-y-1/2 text-ink-muted hover:text-black transition-colors"
+                  aria-label={showPassword ? "Hide password" : "Show password"}
+                >
+                  {showPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+                </button>
               </div>
+
+              {copiedNotification && (
+                <p className="text-[11px] text-emerald-600 font-bold mt-1 flex items-center gap-1">
+                  <Check className="w-3 h-3" />
+                  <span>Generated compliant strong password!</span>
+                </p>
+              )}
+
+              {/* Live Password Strength & Criteria (Registration Mode) */}
+              {isSignUp && (
+                <div className="mt-3 p-3 rounded-lg bg-canvas-elevated border border-border space-y-2.5">
+                  <div className="flex items-center justify-between text-xs">
+                    <span className="font-bold text-ink-secondary">Password Strength:</span>
+                    <span className={`font-bold ${
+                      passedCriteriaCount === 5 ? "text-emerald-600" :
+                      passedCriteriaCount >= 3 ? "text-amber-600" : "text-rose-600"
+                    }`}>
+                      {passedCriteriaCount === 5 ? "Strong & Secure ✓" :
+                       passedCriteriaCount >= 3 ? "Medium" : "Weak"}
+                    </span>
+                  </div>
+
+                  {/* Strength Bar */}
+                  <div className="w-full bg-border h-1.5 rounded-full overflow-hidden flex gap-1">
+                    {[1, 2, 3, 4, 5].map((step) => (
+                      <div
+                        key={step}
+                        className={`h-full flex-1 transition-all ${
+                          passedCriteriaCount >= step
+                            ? passedCriteriaCount === 5
+                              ? "bg-emerald-500"
+                              : passedCriteriaCount >= 3
+                              ? "bg-amber-500"
+                              : "bg-rose-500"
+                            : "bg-neutral-200"
+                        }`}
+                      />
+                    ))}
+                  </div>
+
+                  {/* Criteria Checklist */}
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-1 text-[11px] pt-1">
+                    <div className={`flex items-center gap-1.5 ${criteria.length ? "text-emerald-600 font-bold" : "text-ink-muted"}`}>
+                      {criteria.length ? <CheckCircle2 className="w-3 h-3 shrink-0" /> : <XCircle className="w-3 h-3 shrink-0 text-neutral-400" />}
+                      <span>8+ characters</span>
+                    </div>
+                    <div className={`flex items-center gap-1.5 ${criteria.hasUpper ? "text-emerald-600 font-bold" : "text-ink-muted"}`}>
+                      {criteria.hasUpper ? <CheckCircle2 className="w-3 h-3 shrink-0" /> : <XCircle className="w-3 h-3 shrink-0 text-neutral-400" />}
+                      <span>One uppercase (A-Z)</span>
+                    </div>
+                    <div className={`flex items-center gap-1.5 ${criteria.hasLower ? "text-emerald-600 font-bold" : "text-ink-muted"}`}>
+                      {criteria.hasLower ? <CheckCircle2 className="w-3 h-3 shrink-0" /> : <XCircle className="w-3 h-3 shrink-0 text-neutral-400" />}
+                      <span>One lowercase (a-z)</span>
+                    </div>
+                    <div className={`flex items-center gap-1.5 ${criteria.hasNumber ? "text-emerald-600 font-bold" : "text-ink-muted"}`}>
+                      {criteria.hasNumber ? <CheckCircle2 className="w-3 h-3 shrink-0" /> : <XCircle className="w-3 h-3 shrink-0 text-neutral-400" />}
+                      <span>One number (0-9)</span>
+                    </div>
+                    <div className={`flex items-center gap-1.5 ${criteria.hasSpecial ? "text-emerald-600 font-bold" : "text-ink-muted"} sm:col-span-2`}>
+                      {criteria.hasSpecial ? <CheckCircle2 className="w-3 h-3 shrink-0" /> : <XCircle className="w-3 h-3 shrink-0 text-neutral-400" />}
+                      <span>One special symbol (!@#$%^&*...)</span>
+                    </div>
+                  </div>
+                </div>
+              )}
             </div>
 
             {isSignUp && (
@@ -182,16 +347,27 @@ export default function LoginPage() {
 
             <button
               type="submit"
-              className="w-full py-3 rounded bg-black hover:bg-neutral-800 text-white font-bold text-xs shadow-md transition-all hover:scale-[1.01] active:scale-[0.99] flex items-center justify-center gap-2 mt-4"
+              disabled={isSubmitting || (isSignUp && !isPasswordValid)}
+              className={`w-full py-3 rounded text-white font-bold text-xs shadow-md transition-all flex items-center justify-center gap-2 mt-4 ${
+                isSignUp && !isPasswordValid
+                  ? "bg-neutral-400 cursor-not-allowed"
+                  : "bg-black hover:bg-neutral-800 hover:scale-[1.01] active:scale-[0.99]"
+              }`}
             >
-              <span>{isSignUp ? "Create Free Account" : "Sign In to Dashboard"}</span>
+              <span>
+                {isSubmitting 
+                  ? "Authenticating..." 
+                  : isSignUp 
+                  ? "Create Account & Acquire JWT" 
+                  : "Sign In with JWT Access"}
+              </span>
               <ArrowRight className="w-4 h-4" />
             </button>
           </form>
 
           <div className="pt-2 text-center text-xs text-ink-muted">
             <ShieldCheck className="w-4 h-4 inline-block text-primary mr-1" />
-            <span>Encrypted local session with privacy-first storage</span>
+            <span>JWT Bearer access token issued upon successful authentication</span>
           </div>
         </div>
 
@@ -205,7 +381,7 @@ export default function LoginPage() {
               1-Click Persona Switcher
             </h3>
             <p className="text-xs text-ink-muted mt-1">
-              Select any pre-configured learner profile to test adaptation and personalized DAGs instantly.
+              Select any pre-configured learner profile to test adaptation and personalized DAGs instantly with pre-seeded credentials.
             </p>
           </div>
 
@@ -239,7 +415,7 @@ export default function LoginPage() {
                         {preset.level}
                       </span>
                     </div>
-                    <p className="text-[11px] text-ink-muted truncate">{preset.role}</p>
+                    <p className="text-[11px] text-ink-muted truncate">{preset.email}</p>
                   </div>
                   {isCurrent && (
                     <CheckCircle2 className="w-4 h-4 text-primary shrink-0" />
@@ -250,7 +426,7 @@ export default function LoginPage() {
           </div>
 
           <div className="pt-2 text-[11px] text-ink-muted">
-            Each persona has independent curriculum node states, misconception logs, and course histories.
+            Each persona has independent curriculum node states, misconception logs, and course histories in Supabase PostgreSQL.
           </div>
         </div>
       </div>
