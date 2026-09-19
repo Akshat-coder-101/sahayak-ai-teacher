@@ -283,8 +283,8 @@ Students can switch languages via the UI toggle or via natural language commands
 Run the full stack (PostgreSQL 16 + pgvector, FastAPI Backend, Next.js Frontend) in unified containers:
 
 ```bash
-git clone https://github.com/Akshat-coder-101/AI-INNOVATION-.git
-cd AI-INNOVATION-
+git clone https://github.com/Akshat-coder-101/sahayak-ai-teacher.git
+cd sahayak-ai-teacher
 
 # Configure environment keys (optional, fallback engines active by default)
 cp .env.example .env
@@ -384,6 +384,6 @@ pytest tests/ -v
 
 * **Project**: Sahayak AI Teacher 🎓
 * **Hackathon**: AI Innovation Hackathon 2026
-* **Repository**: [Akshat-coder-101/AI-INNOVATION-](https://github.com/Akshat-coder-101/AI-INNOVATION-.git)
+* **Repository**: [Akshat-coder-101/sahayak-ai-teacher](https://github.com/Akshat-coder-101/sahayak-ai-teacher)
 * **License**: MIT
 
