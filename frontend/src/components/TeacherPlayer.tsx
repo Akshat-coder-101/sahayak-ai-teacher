@@ -246,7 +246,7 @@ export default function TeacherPlayer({
     }
 
     // When Playing:
-    if (segment.video_url && videoRef.current && !mediaError) {
+    if (mediaDisplayMode === "video" && segment.video_url && videoRef.current && !mediaError) {
       if (audioRef.current && !audioRef.current.paused) {
         audioRef.current.pause();
       }
@@ -259,6 +259,9 @@ export default function TeacherPlayer({
         console.log("[TeacherPlayer] Video autoplay prevented, waiting for user click:", e);
       });
     } else if (segment.audio_url && audioRef.current && !mediaError) {
+      if (videoRef.current && !videoRef.current.paused) {
+        videoRef.current.pause();
+      }
       if (typeof window !== "undefined" && "speechSynthesis" in window) {
         window.speechSynthesis.cancel();
       }
@@ -289,7 +292,7 @@ export default function TeacherPlayer({
         }
       }
     }
-  }, [isPlaying, isMuted, playbackRate, segment.video_url, segment.audio_url, segment.spoken_script, activeLanguage, activeTab, mediaError]);
+  }, [isPlaying, segment, playbackRate, isMuted, mediaError, activeTab, activeLanguage, mediaDisplayMode]);
 
   // Sync mute state to media elements
   useEffect(() => {
@@ -309,7 +312,7 @@ export default function TeacherPlayer({
   // Universal progress timer & watchdog (runs for Web Speech or when media fails)
   useEffect(() => {
     let interval: any = null;
-    const isUsingTimerFallback = (!segment.audio_url && !segment.video_url) || mediaError;
+    const isUsingTimerFallback = (!segment.audio_url && (mediaDisplayMode !== "video" || !segment.video_url)) || mediaError;
 
     if (isUsingTimerFallback && isPlaying && !isPausedForCheckpoint) {
       interval = setInterval(() => {
@@ -325,7 +328,7 @@ export default function TeacherPlayer({
       }, 500);
     }
     return () => clearInterval(interval);
-  }, [segment.audio_url, segment.video_url, isPlaying, isPausedForCheckpoint, durationSec, mediaError]);
+  }, [segment.audio_url, segment.video_url, isPlaying, isPausedForCheckpoint, durationSec, mediaError, mediaDisplayMode]);
 
   // Update live caption dynamically from captions array
   useEffect(() => {
@@ -338,10 +341,14 @@ export default function TeacherPlayer({
     );
     if (current) {
       setActiveCaption(current.text);
-    } else if (progressSec >= durationSec) {
-      setActiveCaption(segment.captions[segment.captions.length - 1]?.text || segment.spoken_script);
     } else {
-      setActiveCaption(segment.captions[0]?.text || segment.spoken_script);
+      // Find latest active caption up to current progress
+      const pastCaptions = segment.captions.filter((c) => progressSec >= c.start_sec);
+      if (pastCaptions.length > 0) {
+        setActiveCaption(pastCaptions[pastCaptions.length - 1].text);
+      } else {
+        setActiveCaption(segment.captions[0]?.text || segment.spoken_script);
+      }
     }
   }, [progressSec, segment, durationSec]);
 
@@ -668,8 +675,8 @@ export default function TeacherPlayer({
 
   return (
     <div className="space-y-4">
-      {/* Hidden real HTML5 audio element when audio_url is present without video */}
-      {segment.audio_url && !segment.video_url && !mediaError && (
+      {/* Hidden real HTML5 audio element when audio_url is present */}
+      {segment.audio_url && (mediaDisplayMode !== "video" || !segment.video_url) && !mediaError && (
         <audio
           ref={audioRef}
           crossOrigin="anonymous"
@@ -958,17 +965,17 @@ export default function TeacherPlayer({
                   </div>
                 </div>
 
-                {/* In-Video Live Subtitle Pill */}
-                <div className="relative z-20 px-4 pb-2 pointer-events-none">
-                  <div className="max-w-3xl mx-auto px-4 py-2.5 rounded-xl bg-black/80 backdrop-blur-md border border-white/10 text-center shadow-lg pointer-events-auto">
-                    <p className="text-xs sm:text-sm font-medium text-white leading-relaxed drop-shadow-sm line-clamp-2">
-                      "{activeCaption || segment.spoken_script}"
-                    </p>
+                {/* Bottom Scrub Timeline & Playback Bar with Docked Subtitles */}
+                <div className="relative z-20 p-3 sm:p-4 bg-gradient-to-t from-black/95 via-black/85 to-transparent space-y-2.5 mt-auto">
+                  {/* Live Subtitle Pill docked cleanly at bottom of player */}
+                  <div className="pointer-events-none px-2 pb-0.5">
+                    <div className="max-w-2xl mx-auto px-4 py-2 rounded-xl bg-black/85 backdrop-blur-md border border-white/15 text-center shadow-xl pointer-events-auto">
+                      <p className="text-xs sm:text-sm font-semibold text-white leading-relaxed drop-shadow-md line-clamp-2 tracking-wide">
+                        "{activeCaption || segment.spoken_script}"
+                      </p>
+                    </div>
                   </div>
-                </div>
 
-                {/* Bottom Scrub Timeline & Playback Bar */}
-                <div className="relative z-20 p-3 sm:p-4 bg-gradient-to-t from-black/95 via-black/80 to-transparent space-y-2">
                   <div 
                     onClick={(e) => {
                       const rect = e.currentTarget.getBoundingClientRect();
