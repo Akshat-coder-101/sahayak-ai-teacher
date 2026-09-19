@@ -182,16 +182,16 @@ class EvaluatorService:
             )
 
         # 3. LLM Diagnostic Evaluation (Bounded with strict 4.0s timeout for open-ended or wrong answers)
-            try:
-                system_prompt = (
-                    "You are an expert diagnostic cognitive evaluator in an AI teaching system. "
-                    "Analyze student answers with pedagogical precision. "
-                    "Classify understanding into: 'correct', 'partially_correct', 'misconception', or 'no_understanding'. "
-                    "If there is a misconception, pinpoint the exact underlying cognitive fault (misconception_name specific to this answer) "
-                    "and provide a brand new, unused intuitive analogy and concrete real-world example to remediate it."
-                )
+        try:
+            system_prompt = (
+                "You are an expert diagnostic cognitive evaluator in an AI teaching system. "
+                "Analyze student answers with pedagogical precision. "
+                "Classify understanding into: 'correct', 'partially_correct', 'misconception', or 'no_understanding'. "
+                "If there is a misconception, pinpoint the exact underlying cognitive fault (misconception_name specific to this answer) "
+                "and provide a brand new, unused intuitive analogy and concrete real-world example to remediate it."
+            )
 
-                user_prompt = f"""Evaluate this student checkpoint response:
+            user_prompt = f"""Evaluate this student checkpoint response:
 Concept Taught: {concept}
 Learner Level: {level}
 Language: {language}
@@ -217,131 +217,29 @@ Output JSON schema:
   }}
 }}
 """
-                llm_eval = await asyncio.wait_for(
-                    LLMService.generate_json(
-                        system_prompt=system_prompt,
-                        user_prompt=user_prompt,
-                        schema_hint="Diagnostic evaluation JSON with classification, feedback, misconception_name, new_analogy, followup_question",
-                        temperature=0.2
-                    ),
-                    timeout=4.5
-                )
+            llm_eval = await asyncio.wait_for(
+                LLMService.generate_json(
+                    system_prompt=system_prompt,
+                    user_prompt=user_prompt,
+                    schema_hint="Diagnostic evaluation JSON with classification, feedback, misconception_name, new_analogy, followup_question",
+                    temperature=0.2
+                ),
+                timeout=4.5
+            )
 
-                classification = llm_eval.get("classification", "misconception").lower()
+            classification = llm_eval.get("classification", "misconception").lower()
+            
+            # If classified as correct or partially_correct (when acceptable)
+            if classification in ["correct", "partially_correct"] and not force_misconception:
+                feedback = llm_eval.get("feedback", f"Excellent work! Your understanding of **{concept}** is correct.")
                 
-                # If classified as correct or partially_correct (when acceptable)
-                if classification in ["correct", "partially_correct"] and not force_misconception:
-                    feedback = llm_eval.get("feedback", f"Excellent work! Your understanding of **{concept}** is correct.")
-                    
-                    db_attempt = DBCheckpointAttempt(
-                        id=str(uuid.uuid4()),
-                        session_id=session_id,
-                        segment_id=segment_id,
-                        question_text=question_text,
-                        student_answer=student_answer,
-                        classification=classification,
-                        feedback=feedback
-                    )
-                    db.add(db_attempt)
-                    db.commit()
-
-                    decision_state = TeachingDecisionState(
-                        current_concept=concept,
-                        student_understanding="mastery",
-                        confidence=0.92,
-                        action="advance",
-                        reason="Student demonstrated clear conceptual understanding of the principles.",
-                        next_step="next_concept" if segment_id < len(segments) else "final_assessment",
-                        remaining_time_minutes=max(1, (len(segments) - segment_id) * 4)
-                    )
-
-                    return InteractionResponse(
-                        action="advance",
-                        classification="correct",
-                        feedback=feedback,
-                        next_segment_id=segment_id + 1 if segment_id < len(segments) else None,
-                        decision_state=decision_state
-                    )
-                
-                # Misconception path with LLM data
-                misconception_name = llm_eval.get("misconception_name") or f"Misunderstanding governing dynamics in {concept}"
-                feedback = llm_eval.get("feedback") or f"Great try! You touched upon an interesting nuance in **{concept}**. Let's examine this from a fresh angle."
-                new_analogy = llm_eval.get("new_analogy") or f"Think of {concept} like a regulated feedback circuit."
-                new_example = llm_eval.get("new_example") or f"Notice how balancing forces prevents runaway deviation."
-                remediation = llm_eval.get("remediation_explanation") or new_analogy
-
-                # Append analogy to session dedup list
-                if new_analogy not in used_analogies:
-                    used_analogies.append(new_analogy[:60])
-                if session:
-                    session.analogies_used = list(set(used_analogies))
-                    db.commit()
-
-                fq = llm_eval.get("followup_question") or {}
-                fq_options = fq.get("options", [
-                    f"A) {concept} responds proportionally to maintain equilibrium",
-                    f"B) {concept} completely halts all energy conversion",
-                    f"C) Fluctuations grow without upper bounds",
-                    f"D) Internal parameters are non-deterministic"
-                ])
-                fq_correct = fq.get("correct_answer") or fq_options[0]
-
-                new_checkpoint_q = CheckpointQuestion(
-                    type="mcq",
-                    question=fq.get("question", f"Applying our new insight, how does {concept} maintain stability?"),
-                    options=fq_options,
-                    correct_answer=fq_correct,
-                    hints=fq.get("hints", ["Think about the balanced feedback principle."]),
-                    concept_tested=concept
-                )
-
-                spoken_script = f"Let's look at {concept} with a fresh model. {remediation} {new_example} Notice how this resolves the edge case."
-                on_screen_text = f"💡 Reteach Focus: {concept}\n\n• Diagnosed: {misconception_name}\n• Insight: {new_analogy[:80]}\n• Concrete Case: {new_example[:80]}"
-                
-                # Switch to a VISIBLY DIFFERENT visual type on retry
-                new_visual_type = cls._get_distinct_visual_type(prev_visual_type, concept)
-                visual_spec = VisualRouter.generate_visual_spec(f"[Adaptive Reteach] {concept}", new_visual_type, level)
-
-                audio_url = None
-                try:
-                    tts_res = await asyncio.wait_for(
-                        TTSService.generate_speech(spoken_script, language=language),
-                        timeout=2.0
-                    )
-                    audio_url = tts_res.get("audio_url")
-                except Exception as tts_err:
-                    logger.warning(f"[EvaluatorService] Reteach TTS timed out or skipped: {tts_err}")
-                
-                # Split captions
-                sentences = [s.strip() for s in spoken_script.split(".") if s.strip()]
-                captions = [
-                    CaptionItem(start_sec=0.0, end_sec=4.0, text=sentences[0] if len(sentences) > 0 else f"Let's look at {concept}."),
-                    CaptionItem(start_sec=4.0, end_sec=8.5, text=sentences[1] if len(sentences) > 1 else new_analogy[:70]),
-                    CaptionItem(start_sec=8.5, end_sec=13.0, text=sentences[2] if len(sentences) > 2 else new_example[:70])
-                ]
-
-                reteach_segment = LessonSegmentRender(
-                    segment_id=segment_id,
-                    session_id=session_id,
-                    concept=concept,
-                    spoken_script=spoken_script,
-                    on_screen_text=on_screen_text,
-                    visual_spec=visual_spec,
-                    audio_url=audio_url,
-                    captions=captions,
-                    checkpoint_question=new_checkpoint_q,
-                    analogies_used=used_analogies,
-                    language=language,
-                    is_reteach=True
-                )
-
                 db_attempt = DBCheckpointAttempt(
                     id=str(uuid.uuid4()),
                     session_id=session_id,
                     segment_id=segment_id,
                     question_text=question_text,
                     student_answer=student_answer,
-                    classification="misconception",
+                    classification=classification,
                     feedback=feedback
                 )
                 db.add(db_attempt)
@@ -349,29 +247,131 @@ Output JSON schema:
 
                 decision_state = TeachingDecisionState(
                     current_concept=concept,
-                    student_understanding="misconception",
-                    confidence=0.78,
-                    action="simplify",
-                    reason=misconception_name,
-                    next_step="explain_with_analogy",
-                    remaining_time_minutes=max(1, (len(segments) - segment_id + 1) * 4)
+                    student_understanding="mastery",
+                    confidence=0.92,
+                    action="advance",
+                    reason="Student demonstrated clear conceptual understanding of the principles.",
+                    next_step="next_concept" if segment_id < len(segments) else "final_assessment",
+                    remaining_time_minutes=max(1, (len(segments) - segment_id) * 4)
                 )
 
                 return InteractionResponse(
-                    action="reteach",
-                    classification="misconception",
+                    action="advance",
+                    classification="correct",
                     feedback=feedback,
-                    misconception_name=misconception_name,
-                    new_analogy=new_analogy,
-                    new_example=new_example,
-                    new_checkpoint_question=new_checkpoint_q,
-                    reteach_segment=reteach_segment,
-                    next_segment_id=segment_id,
+                    next_segment_id=segment_id + 1 if segment_id < len(segments) else None,
                     decision_state=decision_state
                 )
+            
+            # Misconception path with LLM data
+            misconception_name = llm_eval.get("misconception_name") or f"Misunderstanding governing dynamics in {concept}"
+            feedback = llm_eval.get("feedback") or f"Great try! You touched upon an interesting nuance in **{concept}**. Let's examine this from a fresh angle."
+            new_analogy = llm_eval.get("new_analogy") or f"Think of {concept} like a regulated feedback circuit."
+            new_example = llm_eval.get("new_example") or f"Notice how balancing forces prevents runaway deviation."
+            remediation = llm_eval.get("remediation_explanation") or new_analogy
 
-            except Exception as e:
-                logger.warning(f"[EvaluatorService] LLM evaluation failed ({e}); switching to heuristic evaluation.")
+            # Append analogy to session dedup list
+            if new_analogy not in used_analogies:
+                used_analogies.append(new_analogy[:60])
+            if session:
+                session.analogies_used = list(set(used_analogies))
+                db.commit()
+
+            fq = llm_eval.get("followup_question") or {}
+            fq_options = fq.get("options", [
+                f"A) {concept} responds proportionally to maintain equilibrium",
+                f"B) {concept} completely halts all energy conversion",
+                f"C) Fluctuations grow without upper bounds",
+                f"D) Internal parameters are non-deterministic"
+            ])
+            fq_correct = fq.get("correct_answer") or fq_options[0]
+
+            new_checkpoint_q = CheckpointQuestion(
+                type="mcq",
+                question=fq.get("question", f"Applying our new insight, how does {concept} maintain stability?"),
+                options=fq_options,
+                correct_answer=fq_correct,
+                hints=fq.get("hints", ["Think about the balanced feedback principle."]),
+                concept_tested=concept
+            )
+
+            spoken_script = f"Let's look at {concept} with a fresh model. {remediation} {new_example} Notice how this resolves the edge case."
+            on_screen_text = f"💡 Reteach Focus: {concept}\n\n• Diagnosed: {misconception_name}\n• Insight: {new_analogy[:80]}\n• Concrete Case: {new_example[:80]}"
+            
+            # Switch to a VISIBLY DIFFERENT visual type on retry
+            new_visual_type = cls._get_distinct_visual_type(prev_visual_type, concept)
+            visual_spec = VisualRouter.generate_visual_spec(f"[Adaptive Reteach] {concept}", new_visual_type, level)
+
+            audio_url = None
+            try:
+                tts_res = await asyncio.wait_for(
+                    TTSService.generate_speech(spoken_script, language=language),
+                    timeout=2.0
+                )
+                audio_url = tts_res.get("audio_url")
+            except Exception as tts_err:
+                logger.warning(f"[EvaluatorService] Reteach TTS timed out or skipped: {tts_err}")
+            
+            # Split captions
+            sentences = [s.strip() for s in spoken_script.split(".") if s.strip()]
+            captions = [
+                CaptionItem(start_sec=0.0, end_sec=4.0, text=sentences[0] if len(sentences) > 0 else f"Let's look at {concept}."),
+                CaptionItem(start_sec=4.0, end_sec=8.5, text=sentences[1] if len(sentences) > 1 else new_analogy[:70]),
+                CaptionItem(start_sec=8.5, end_sec=13.0, text=sentences[2] if len(sentences) > 2 else new_example[:70])
+            ]
+
+            reteach_segment = LessonSegmentRender(
+                segment_id=segment_id,
+                session_id=session_id,
+                concept=concept,
+                spoken_script=spoken_script,
+                on_screen_text=on_screen_text,
+                visual_spec=visual_spec,
+                audio_url=audio_url,
+                captions=captions,
+                checkpoint_question=new_checkpoint_q,
+                analogies_used=used_analogies,
+                language=language,
+                is_reteach=True
+            )
+
+            db_attempt = DBCheckpointAttempt(
+                id=str(uuid.uuid4()),
+                session_id=session_id,
+                segment_id=segment_id,
+                question_text=question_text,
+                student_answer=student_answer,
+                classification="misconception",
+                feedback=feedback
+            )
+            db.add(db_attempt)
+            db.commit()
+
+            decision_state = TeachingDecisionState(
+                current_concept=concept,
+                student_understanding="misconception",
+                confidence=0.78,
+                action="simplify",
+                reason=misconception_name,
+                next_step="explain_with_analogy",
+                remaining_time_minutes=max(1, (len(segments) - segment_id + 1) * 4)
+            )
+
+            return InteractionResponse(
+                action="reteach",
+                classification="misconception",
+                feedback=feedback,
+                misconception_name=misconception_name,
+                new_analogy=new_analogy,
+                new_example=new_example,
+                new_checkpoint_question=new_checkpoint_q,
+                reteach_segment=reteach_segment,
+                next_segment_id=segment_id,
+                decision_state=decision_state
+            )
+
+        except Exception as e:
+            logger.warning(f"[EvaluatorService] LLM evaluation failed ({e}); switching to heuristic evaluation.")
 
         # 3. Rule-Based Fallback (Offline / Demo Mode)
         ans_lower = student_answer.strip().lower()

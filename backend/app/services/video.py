@@ -694,11 +694,12 @@ class VideoService:
                                 mode=active_mode,
                                 session_id=session_id
                             )
-                            job.progress = calc_prog
-                            try:
-                                db.commit()
-                            except Exception:
-                                pass
+                            if job is not None:
+                                job.progress = calc_prog
+                                try:
+                                    db.commit()
+                                except Exception:
+                                    pass
                             return (idx, seg_full_path)
                     return None
 
@@ -711,10 +712,15 @@ class VideoService:
             rendered_files = [r[1] for r in valid_results]
 
             if not rendered_files:
-                job.status = "failed"
-                job.error_message = "Could not synthesize segment video tracks: media components unavailable."
-                db.commit()
-                cls.set_job_progress(job_id, status="failed", progress=0, error_message=job.error_message, mode=active_mode)
+                err_text = "Could not synthesize segment video tracks: media components unavailable."
+                if job is not None:
+                    job.status = "failed"
+                    job.error_message = err_text
+                    try:
+                        db.commit()
+                    except Exception:
+                        pass
+                cls.set_job_progress(job_id, status="failed", progress=0, error_message=err_text, mode=active_mode)
                 return
 
             # Final Stitching Step: Stream-copy concatenation (-c copy)
@@ -784,10 +790,15 @@ class VideoService:
             if current_steps:
                 current_steps[-1]["status"] = "completed"
             
-            job.status = "completed"
-            job.progress = 100
-            job.video_url = f"/media/{final_filename}"
-            db.commit()
+            final_video_url = f"/media/{final_filename}"
+            if job is not None:
+                job.status = "completed"
+                job.progress = 100
+                job.video_url = final_video_url
+                try:
+                    db.commit()
+                except Exception:
+                    pass
 
             cls.set_job_progress(
                 job_id,
@@ -795,11 +806,11 @@ class VideoService:
                 progress=100,
                 current_step="Lecture video ready for playback",
                 steps=current_steps,
-                video_url=job.video_url,
+                video_url=job.video_url if job is not None and job.video_url else final_video_url,
                 mode=active_mode,
                 session_id=session_id
             )
-            logger.info(f"[VideoService] Export job {job_id} successfully finished ({active_mode}): {job.video_url}")
+            logger.info(f"[VideoService] Export job {job_id} successfully finished ({active_mode}): {final_video_url}")
 
         except Exception as err:
             logger.exception(f"[VideoService] Export job {job_id} encountered fatal error: {err}")
