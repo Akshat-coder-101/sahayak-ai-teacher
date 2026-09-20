@@ -61,6 +61,24 @@ def seed_demo_data():
             user.hashed_password = get_password_hash(DEMO_PASSWORD)
             logger.info(f"Demo student account verified: {DEMO_EMAIL}")
 
+        demo_mastery = {
+            "Photosynthesis": {
+                "mastery": "developing",
+                "score": 0.45,
+                "confidence": 0.75,
+                "evidence": "Initial diagnostic checkpoint",
+                "misconceptions": [],
+                "attempts": 1
+            },
+            "Cellular Respiration": {
+                "mastery": "weak",
+                "score": 0.30,
+                "confidence": 0.70,
+                "evidence": "Initial diagnostic checkpoint",
+                "misconceptions": ["Confused with gas exchange"],
+                "attempts": 1
+            }
+        }
         profile = db.query(DBLearnerProfile).filter(DBLearnerProfile.user_id == DEMO_USER_ID).first()
         if not profile:
             profile = DBLearnerProfile(
@@ -70,9 +88,13 @@ def seed_demo_data():
                 goal="master_concept",
                 preferred_style="visual",
                 language="en",
-                mastery_json={"Photosynthesis": 0.45, "Cellular Respiration": 0.30}
+                mastery_json=demo_mastery
             )
             db.add(profile)
+        else:
+            # Upgrade existing profile if it had raw float format
+            if isinstance(profile.mastery_json, dict) and any(isinstance(v, (int, float)) for v in profile.mastery_json.values()):
+                profile.mastery_json = demo_mastery
         db.commit()
 
         # 2. Ingest Sample Document

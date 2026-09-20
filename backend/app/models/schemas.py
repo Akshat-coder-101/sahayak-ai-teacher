@@ -1,4 +1,4 @@
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, Field, field_validator
 from typing import List, Optional, Dict, Any, Union
 from datetime import datetime, timezone
 import uuid
@@ -59,6 +59,55 @@ class LearnerProfile(LearnerProfileCreate):
     prerequisite_gaps: List[Dict[str, Any]] = Field(default_factory=list)
     active_paths: List[Dict[str, Any]] = Field(default_factory=list)
     created_at: datetime = Field(default_factory=get_utc_now)
+
+    @field_validator("concept_masteries", mode="before")
+    @classmethod
+    def normalize_concept_masteries(cls, v: Any) -> Dict[str, Dict[str, Any]]:
+        if not isinstance(v, dict):
+            return {}
+        normalized: Dict[str, Dict[str, Any]] = {}
+        for c_name, data in v.items():
+            if isinstance(data, dict):
+                normalized[c_name] = data
+            elif isinstance(data, (int, float)):
+                score_val = float(data)
+                if score_val > 1.0:
+                    score_val = score_val / 100.0
+                if score_val >= 0.8:
+                    m_state = "mastered"
+                elif score_val >= 0.6:
+                    m_state = "strong"
+                elif score_val >= 0.4:
+                    m_state = "developing"
+                else:
+                    m_state = "weak"
+                normalized[c_name] = {
+                    "mastery": m_state,
+                    "score": score_val,
+                    "confidence": 0.8,
+                    "evidence": f"Recorded score: {score_val:.0%}",
+                    "misconceptions": [],
+                    "attempts": 1,
+                }
+            elif isinstance(data, str):
+                normalized[c_name] = {
+                    "mastery": data,
+                    "score": 0.85 if data in ["mastered", "strong"] else 0.4,
+                    "confidence": 0.8,
+                    "evidence": f"Status: {data}",
+                    "misconceptions": [],
+                    "attempts": 1,
+                }
+            else:
+                normalized[c_name] = {
+                    "mastery": "developing",
+                    "score": 0.5,
+                    "confidence": 0.5,
+                    "evidence": str(data),
+                    "misconceptions": [],
+                    "attempts": 1,
+                }
+        return normalized
 
 # --- Ingestion & RAG Schemas ---
 class IngestResponse(BaseModel):

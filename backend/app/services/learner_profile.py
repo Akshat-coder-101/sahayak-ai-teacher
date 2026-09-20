@@ -8,7 +8,8 @@ from ..database import (
     DBLessonSession,
     DBQuizAttempt,
     DBLearningReport,
-    DBCheckpointAttempt
+    DBCheckpointAttempt,
+    get_utc_now
 )
 from ..models.schemas import (
     LearnerProfile,
@@ -53,7 +54,65 @@ class LearnerProfileService:
         p = cls.get_or_create_profile(user_id, db)
         
         history: List[Dict[str, Any]] = list(p.history_json) if isinstance(p.history_json, list) else []
-        mastery_map: Dict[str, Dict[str, Any]] = dict(p.mastery_json) if isinstance(p.mastery_json, dict) else {}
+        raw_mastery: Dict[str, Any] = dict(p.mastery_json) if isinstance(p.mastery_json, dict) else {}
+
+        # Normalize raw mastery values (e.g. floats, ints, strings from seeds/legacy data) into rich dicts
+        mastery_map: Dict[str, Dict[str, Any]] = {}
+        needs_db_heal = False
+        for c_name, data in raw_mastery.items():
+            if isinstance(data, dict):
+                mastery_map[c_name] = data
+            elif isinstance(data, (int, float)):
+                needs_db_heal = True
+                score_val = float(data)
+                if score_val > 1.0:
+                    score_val = score_val / 100.0
+                if score_val >= 0.8:
+                    m_state = "mastered"
+                elif score_val >= 0.6:
+                    m_state = "strong"
+                elif score_val >= 0.4:
+                    m_state = "developing"
+                else:
+                    m_state = "weak"
+                mastery_map[c_name] = {
+                    "mastery": m_state,
+                    "score": score_val,
+                    "confidence": 0.8,
+                    "evidence": f"Pre-existing score: {score_val:.0%}",
+                    "misconceptions": [],
+                    "attempts": 1,
+                    "last_assessed": get_utc_now().isoformat()
+                }
+            elif isinstance(data, str):
+                needs_db_heal = True
+                mastery_map[c_name] = {
+                    "mastery": data,
+                    "score": 0.85 if data in ["mastered", "strong"] else 0.4,
+                    "confidence": 0.8,
+                    "evidence": f"Recorded state: {data}",
+                    "misconceptions": [],
+                    "attempts": 1,
+                    "last_assessed": get_utc_now().isoformat()
+                }
+            else:
+                needs_db_heal = True
+                mastery_map[c_name] = {
+                    "mastery": "developing",
+                    "score": 0.5,
+                    "confidence": 0.5,
+                    "evidence": str(data),
+                    "misconceptions": [],
+                    "attempts": 1,
+                    "last_assessed": get_utc_now().isoformat()
+                }
+
+        if needs_db_heal:
+            try:
+                p.mastery_json = mastery_map
+                db.commit()
+            except Exception:
+                db.rollback()
 
         # 1. Classify concepts by granular mastery state
         strong_concepts: List[str] = []
@@ -114,13 +173,15 @@ class LearnerProfileService:
                 "completed_nodes": len(completed_nodes)
             })
 
-            if lp.progress_percentage >= 100.0:
-                completed_topics.append(lp.title or lp.topic_id)
-            else:
-                in_progress_topics.append(lp.title or lp.topic_id)
-                if not current_topic and in_prog_nodes:
-                    current_topic = in_prog_nodes[0]
-                    current_path_id = lp.topic_id
+            topic_label = lp.title or lp.topic_id
+            if topic_label:
+                if lp.progress_percentage >= 100.0:
+                    completed_topics.append(topic_label)
+                else:
+                    in_progress_topics.append(topic_label)
+            if not current_topic and in_prog_nodes and isinstance(in_prog_nodes[0], str):
+                current_topic = in_prog_nodes[0]
+                current_path_id = lp.topic_id
 
         # 3. Determine next recommended action
         if weak_concepts or misunderstood_concepts:

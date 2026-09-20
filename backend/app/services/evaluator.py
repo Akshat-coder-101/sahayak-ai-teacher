@@ -224,7 +224,7 @@ Output JSON schema:
                     schema_hint="Diagnostic evaluation JSON with classification, feedback, misconception_name, new_analogy, followup_question",
                     temperature=0.2
                 ),
-                timeout=4.5
+                timeout=12.0
             )
 
             classification = llm_eval.get("classification", "misconception").lower()
@@ -422,8 +422,33 @@ Output JSON schema:
                 decision_state=decision_state
             )
 
-        # Fallback Reteach with curated analogies bank
-        misconception_name = f"Confusing Static Equilibrium with Dynamic Flux in {concept}"
+        # Check for indicators of no understanding vs partial vs misconception
+        no_understanding_phrases = [
+            "no idea", "don't know", "dont know", "not sure", "idk", "never heard",
+            "haven't learned", "havent learned", "what is", "no clue", "confused",
+            "i forget", "forgot", "can't remember", "cant remember"
+        ]
+        is_no_understanding = any(p in ans_lower for p in no_understanding_phrases) or (len(ans_lower.split()) <= 1 and ans_lower not in ["yes", "true", "correct"])
+
+        # Check for partial correctness (keyword overlap without full assertion)
+        corr_words = set(re.findall(r"\b\w{4,}\b", corr_lower))
+        ans_words = set(re.findall(r"\b\w{4,}\b", ans_lower))
+        overlap = corr_words.intersection(ans_words)
+        is_partial = (len(overlap) >= 2 or (len(overlap) >= 1 and len(ans_words) <= 4)) and not is_no_understanding
+
+        if is_no_understanding:
+            fallback_classification = "no_understanding"
+            misconception_name = f"Foundational unfamiliarity with {concept}"
+            feedback = f"No worries at all! **{concept}** has some new terminology. Let's build the intuition together from square one."
+        elif is_partial:
+            fallback_classification = "partially_correct"
+            misconception_name = f"Incomplete conceptual model of {concept}"
+            feedback = f"You are definitely on the right track with **{concept}**! Let's connect the remaining dots with a clear analogy."
+        else:
+            fallback_classification = "misconception"
+            misconception_name = f"Confusing Static Equilibrium with Dynamic Flux in {concept}"
+            feedback = f"Great try! You hit a very common nuance in **{concept}**. Let's unpack this with a fresh perspective."
+
         analogy_title, analogy_text = cls.get_fresh_analogy(concept, used_analogies)
         used_analogies.append(analogy_title)
         if session:
@@ -431,7 +456,6 @@ Output JSON schema:
             db.commit()
 
         new_example = f"Consider a real-world case: pedaling a bicycle on flat asphalt versus uphill. On flat road, momentum carries you forward; uphill requires continuous force application."
-        feedback = f"Great try! You hit a very common nuance in **{concept}**. Let's unpack this with a fresh perspective."
 
         new_checkpoint_q = CheckpointQuestion(
             type="mcq",
@@ -478,7 +502,7 @@ Output JSON schema:
             segment_id=segment_id,
             question_text=question_text,
             student_answer=student_answer,
-            classification="misconception",
+            classification=fallback_classification,
             feedback=feedback
         )
         db.add(db_attempt)
@@ -486,7 +510,7 @@ Output JSON schema:
 
         decision_state = TeachingDecisionState(
             current_concept=concept,
-            student_understanding="misconception",
+            student_understanding=fallback_classification,
             confidence=0.75,
             action="simplify",
             reason=misconception_name,
@@ -496,7 +520,7 @@ Output JSON schema:
 
         return InteractionResponse(
             action="reteach",
-            classification="misconception",
+            classification=fallback_classification,
             feedback=feedback,
             misconception_name=misconception_name,
             new_analogy=analogy_text,

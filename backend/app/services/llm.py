@@ -16,7 +16,7 @@ class LLMService:
     async def _call_gemini(cls, system_prompt: str, user_prompt: str, temperature: float) -> str:
         if not settings.GEMINI_API_KEY or len(settings.GEMINI_API_KEY.strip()) < 5:
             return ""
-        endpoint = f"https://generativelanguage.googleapis.com/v1beta/models/{settings.GEMINI_MODEL}:generateContent?key={settings.GEMINI_API_KEY}"
+
         payload: Dict[str, Any] = {
             "contents": [
                 {
@@ -34,51 +34,86 @@ class LLMService:
                 "parts": [{"text": system_prompt}]
             }
             
+        endpoint = f"https://generativelanguage.googleapis.com/v1beta/models/{settings.GEMINI_MODEL}:generateContent?key={settings.GEMINI_API_KEY}"
         async with httpx.AsyncClient(timeout=35.0) as client:
-            resp = await client.post(
-                endpoint,
-                headers={"Content-Type": "application/json"},
-                json=payload
-            )
-            if resp.status_code == 200:
-                data = resp.json()
-                candidates = data.get("candidates", [])
-                if candidates and "content" in candidates[0]:
-                    parts = candidates[0]["content"].get("parts", [])
-                    if parts and "text" in parts[0]:
-                        return parts[0]["text"].strip()
-            else:
-                logger.warning(f"[LLMService] Gemini API failed with status {resp.status_code}: {resp.text}")
+            try:
+                resp = await client.post(
+                    endpoint,
+                    headers={"Content-Type": "application/json"},
+                    json=payload
+                )
+                if resp.status_code == 200:
+                    data = resp.json()
+                    candidates = data.get("candidates", [])
+                    if candidates and "content" in candidates[0]:
+                        parts = candidates[0]["content"].get("parts", [])
+                        if parts and "text" in parts[0]:
+                            return parts[0]["text"].strip()
+                else:
+                    logger.warning(f"[LLMService] Gemini API failed with status {resp.status_code}: {resp.text[:120]}")
+            except Exception as e:
+                logger.warning(f"[LLMService] Gemini connection exception: {e}")
         return ""
 
     @classmethod
     async def _call_groq(cls, system_prompt: str, user_prompt: str, temperature: float) -> str:
         if not settings.GROQ_API_KEY or len(settings.GROQ_API_KEY.strip()) < 5:
             return ""
+
+        is_qwen = "qwen" in settings.GROQ_MODEL.lower()
+        groq_max_tokens = 800 if is_qwen else 2048
+
         async with httpx.AsyncClient(timeout=35.0) as client:
-            resp = await client.post(
-                "https://api.groq.com/openai/v1/chat/completions",
-                headers={
-                    "Authorization": f"Bearer {settings.GROQ_API_KEY}",
-                    "Content-Type": "application/json"
-                },
-                json={
-                    "model": settings.GROQ_MODEL,
-                    "max_tokens": 4096,
-                    "temperature": temperature,
-                    "messages": [
-                        {"role": "system", "content": system_prompt or "You are an expert AI teacher."},
-                        {"role": "user", "content": user_prompt}
-                    ]
-                }
-            )
-            if resp.status_code == 200:
-                data = resp.json()
-                choices = data.get("choices", [])
-                if choices and "message" in choices[0]:
-                    return choices[0]["message"].get("content", "").strip()
-            else:
-                logger.warning(f"[LLMService] Groq API failed with status {resp.status_code}: {resp.text}")
+            try:
+                resp = await client.post(
+                    "https://api.groq.com/openai/v1/chat/completions",
+                    headers={
+                        "Authorization": f"Bearer {settings.GROQ_API_KEY}",
+                        "Content-Type": "application/json"
+                    },
+                    json={
+                        "model": settings.GROQ_MODEL,
+                        "max_tokens": groq_max_tokens,
+                        "temperature": temperature,
+                        "messages": [
+                            {"role": "system", "content": system_prompt or "You are an expert AI teacher."},
+                            {"role": "user", "content": user_prompt}
+                        ]
+                    }
+                )
+                if resp.status_code == 200:
+                    data = resp.json()
+                    choices = data.get("choices", [])
+                    if choices and "message" in choices[0]:
+                        return choices[0]["message"].get("content", "").strip()
+                elif resp.status_code == 429 and ("Request too large" in resp.text or "reduce max_tokens" in resp.text or "OTPM" in resp.text):
+                    logger.info("[LLMService] Groq OTPM limit hit, retrying with max_tokens=500...")
+                    retry_resp = await client.post(
+                        "https://api.groq.com/openai/v1/chat/completions",
+                        headers={
+                            "Authorization": f"Bearer {settings.GROQ_API_KEY}",
+                            "Content-Type": "application/json"
+                        },
+                        json={
+                            "model": settings.GROQ_MODEL,
+                            "max_tokens": 500,
+                            "temperature": temperature,
+                            "messages": [
+                                {"role": "system", "content": system_prompt or "You are an expert AI teacher."},
+                                {"role": "user", "content": user_prompt}
+                            ]
+                        }
+                    )
+                    if retry_resp.status_code == 200:
+                        data = retry_resp.json()
+                        choices = data.get("choices", [])
+                        if choices and "message" in choices[0]:
+                            return choices[0]["message"].get("content", "").strip()
+                    logger.warning(f"[LLMService] Groq retry failed with status {retry_resp.status_code}: {retry_resp.text[:120]}")
+                else:
+                    logger.warning(f"[LLMService] Groq API failed with status {resp.status_code}: {resp.text[:120]}")
+            except Exception as e:
+                logger.warning(f"[LLMService] Groq invocation exception: {e}")
         return ""
 
     @classmethod
@@ -199,6 +234,8 @@ class LLMService:
 
             elif provider == "groq" and settings.GROQ_API_KEY and len(settings.GROQ_API_KEY.strip()) > 5:
                 try:
+                    is_qwen = "qwen" in settings.GROQ_MODEL.lower()
+                    groq_max_tokens = 800 if is_qwen else 2048
                     async with httpx.AsyncClient(timeout=45.0) as client:
                         async with client.stream(
                             "POST",
@@ -209,7 +246,7 @@ class LLMService:
                             },
                             json={
                                 "model": settings.GROQ_MODEL,
-                                "max_tokens": 4096,
+                                "max_tokens": groq_max_tokens,
                                 "temperature": temperature,
                                 "stream": True,
                                 "messages": [
