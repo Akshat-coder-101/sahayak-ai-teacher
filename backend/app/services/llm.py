@@ -2,7 +2,7 @@ import json
 import re
 import logging
 import httpx
-from typing import Dict, Any, Optional, List, Union
+from typing import Dict, Any, Optional, Union
 from ..config import settings
 
 logger = logging.getLogger("sahayak.llm")
@@ -66,8 +66,7 @@ class LLMService:
         if not settings.GROQ_API_KEY or len(settings.GROQ_API_KEY.strip()) < 5:
             return ""
 
-        is_qwen = "qwen" in settings.GROQ_MODEL.lower()
-        groq_max_tokens = 800 if is_qwen else 2048
+        groq_max_tokens = 4096
 
         async with httpx.AsyncClient(timeout=35.0) as client:
             try:
@@ -242,11 +241,9 @@ class LLMService:
                     except Exception as e:
                         logger.warning(f"[LLMService] Gemini streaming error with key ...{key[-6:]}: {e}")
                         continue
-
             elif provider == "groq" and settings.GROQ_API_KEY and len(settings.GROQ_API_KEY.strip()) > 5:
                 try:
-                    is_qwen = "qwen" in settings.GROQ_MODEL.lower()
-                    groq_max_tokens = 800 if is_qwen else 2048
+                    groq_max_tokens = 4096
                     async with httpx.AsyncClient(timeout=45.0) as client:
                         async with client.stream(
                             "POST",
@@ -337,7 +334,7 @@ class LLMService:
         system_instruction = (system_prompt or "") + "\nCRITICAL: You must output ONLY valid RFC8259 JSON. No markdown fences, no explanatory text, no HTML."
         effective_schema = schema_hint if schema_hint is not None else response_schema
         if effective_schema:
-            schema_str = json.dumps(effective_schema) if isinstance(effective_schema, dict) else str(effective_schema)
+            schema_str = json.dumps(effective_schema) if isinstance(effective_schema, dict) else effective_schema
             system_instruction += f"\nJSON Schema Expected:\n{schema_str}"
 
         raw_output = ""
