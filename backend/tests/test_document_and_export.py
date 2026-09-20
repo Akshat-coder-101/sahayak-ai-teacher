@@ -6,6 +6,7 @@ import pytest
 import docx
 import pptx
 from fastapi.testclient import TestClient
+from unittest.mock import patch
 
 # Add backend directory to sys.path
 sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), "..")))
@@ -292,7 +293,8 @@ def test_export_lesson_video_endpoints_and_job_lifecycle():
         db.commit()
 
         # 1. Trigger export
-        res = client.post(f"/api/lesson/{session_id}/export")
+        with patch("app.api.lesson.VideoService.export_full_lesson_video"):
+            res = client.post(f"/api/lesson/{session_id}/export")
         assert res.status_code == 200
         export_data = res.json()
         job_id = export_data["job_id"]
@@ -341,8 +343,9 @@ async def test_video_export_worker_graceful_missing_ffmpeg():
         db.add(job)
         db.commit()
 
-        # Execute worker directly
-        await VideoService.export_full_lesson_video(job_id=job_id, session_id=session_id)
+        # Execute worker directly with mocked missing ffmpeg
+        with patch("app.services.video.shutil.which", return_value=None):
+            await VideoService.export_full_lesson_video(job_id=job_id, session_id=session_id)
 
         # Inspect job record
         updated_job = db.query(DBExportJob).filter(DBExportJob.id == job_id).first()

@@ -6,6 +6,7 @@ import tempfile
 import subprocess
 import logging
 from typing import Dict, Any, Optional
+from ..config import settings
 
 logger = logging.getLogger("sahayak.sandbox")
 
@@ -16,6 +17,8 @@ class CodeSandboxService:
 
     @classmethod
     def _is_docker_available(cls) -> bool:
+        if getattr(settings, "ENV", "").lower() == "test" or os.getenv("DISABLE_DOCKER_SANDBOX", "").lower() in ["1", "true"]:
+            return False
         docker_path = shutil.which("docker")
         if not docker_path:
             return False

@@ -31,22 +31,24 @@ def test_video_generate_and_status_api(auth_headers):
     Tests POST /api/video/generate and GET /api/video/status/{job_id}.
     Verifies immediate job return, valid step list, and status reporting.
     """
-    # 1. Start generation in demo mode
-    resp = client.post(
-        "/api/video/generate",
-        headers=auth_headers,
-        json={
-            "topic": "Photosynthesis and Calvin Cycle",
-            "mode": "demo",
-            "language": "en"
-        }
-    )
-    assert resp.status_code == 200, resp.text
-    data = resp.json()
-    assert "job_id" in data
-    assert data["status"] in ["processing", "queued"]
-    assert data["mode"] == "demo"
-    job_id = data["job_id"]
+    from unittest.mock import patch
+    with patch("app.api.video.VideoService.generate_standalone_video"):
+        # 1. Start generation in demo mode
+        resp = client.post(
+            "/api/video/generate",
+            headers=auth_headers,
+            json={
+                "topic": "Photosynthesis and Calvin Cycle",
+                "mode": "demo",
+                "language": "en"
+            }
+        )
+        assert resp.status_code == 200, resp.text
+        data = resp.json()
+        assert "job_id" in data
+        assert data["status"] in ["processing", "queued"]
+        assert data["mode"] == "demo"
+        job_id = data["job_id"]
 
     # 2. Check status polling endpoint
     status_resp = client.get(f"/api/video/status/{job_id}", headers=auth_headers)
