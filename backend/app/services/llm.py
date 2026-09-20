@@ -14,7 +14,8 @@ class LLMUnavailable(Exception):
 class LLMService:
     @classmethod
     async def _call_gemini(cls, system_prompt: str, user_prompt: str, temperature: float) -> str:
-        if not settings.GEMINI_API_KEY or len(settings.GEMINI_API_KEY.strip()) < 5:
+        keys = settings.gemini_api_keys
+        if not keys:
             return ""
 
         payload: Dict[str, Any] = {
@@ -34,25 +35,30 @@ class LLMService:
                 "parts": [{"text": system_prompt}]
             }
             
-        endpoint = f"https://generativelanguage.googleapis.com/v1beta/models/{settings.GEMINI_MODEL}:generateContent?key={settings.GEMINI_API_KEY}"
         async with httpx.AsyncClient(timeout=35.0) as client:
-            try:
-                resp = await client.post(
-                    endpoint,
-                    headers={"Content-Type": "application/json"},
-                    json=payload
-                )
-                if resp.status_code == 200:
-                    data = resp.json()
-                    candidates = data.get("candidates", [])
-                    if candidates and "content" in candidates[0]:
-                        parts = candidates[0]["content"].get("parts", [])
-                        if parts and "text" in parts[0]:
-                            return parts[0]["text"].strip()
-                else:
-                    logger.warning(f"[LLMService] Gemini API failed with status {resp.status_code}: {resp.text[:120]}")
-            except Exception as e:
-                logger.warning(f"[LLMService] Gemini connection exception: {e}")
+            for key in keys:
+                endpoint = f"https://generativelanguage.googleapis.com/v1beta/models/{settings.GEMINI_MODEL}:generateContent?key={key}"
+                try:
+                    resp = await client.post(
+                        endpoint,
+                        headers={"Content-Type": "application/json"},
+                        json=payload
+                    )
+                    if resp.status_code == 200:
+                        data = resp.json()
+                        candidates = data.get("candidates", [])
+                        if candidates and "content" in candidates[0]:
+                            parts = candidates[0]["content"].get("parts", [])
+                            if parts and "text" in parts[0]:
+                                return parts[0]["text"].strip()
+                    else:
+                        logger.warning(f"[LLMService] Gemini key ...{key[-6:]} failed with status {resp.status_code}: {resp.text[:120]}")
+                        # On 429 quota exhaustion or 403, fail over to the next key
+                        if resp.status_code in (429, 403, 400):
+                            continue
+                except Exception as e:
+                    logger.warning(f"[LLMService] Gemini key ...{key[-6:]} connection exception: {e}")
+                    continue
         return ""
 
     @classmethod
@@ -195,42 +201,47 @@ class LLMService:
             provider_order = ["gemini", "groq", "anthropic"]
 
         for provider in provider_order:
-            if provider == "gemini" and settings.GEMINI_API_KEY and len(settings.GEMINI_API_KEY.strip()) > 5:
-                try:
-                    endpoint = f"https://generativelanguage.googleapis.com/v1beta/models/{settings.GEMINI_MODEL}:streamGenerateContent?alt=sse&key={settings.GEMINI_API_KEY}"
-                    payload: Dict[str, Any] = {
-                        "contents": [{"role": "user", "parts": [{"text": user_prompt}]}],
-                        "generationConfig": {"temperature": temperature, "maxOutputTokens": 4096}
-                    }
-                    if system_prompt:
-                        payload["systemInstruction"] = {"parts": [{"text": system_prompt}]}
+            if provider == "gemini" and settings.gemini_api_keys:
+                for key in settings.gemini_api_keys:
+                    try:
+                        endpoint = f"https://generativelanguage.googleapis.com/v1beta/models/{settings.GEMINI_MODEL}:streamGenerateContent?alt=sse&key={key}"
+                        payload: Dict[str, Any] = {
+                            "contents": [{"role": "user", "parts": [{"text": user_prompt}]}],
+                            "generationConfig": {"temperature": temperature, "maxOutputTokens": 4096}
+                        }
+                        if system_prompt:
+                            payload["systemInstruction"] = {"parts": [{"text": system_prompt}]}
 
-                    async with httpx.AsyncClient(timeout=45.0) as client:
-                        async with client.stream("POST", endpoint, json=payload) as response:
-                            if response.status_code == 200:
-                                streamed_any = False
-                                async for line in response.aiter_lines():
-                                    line = line.strip()
-                                    if line.startswith("data:"):
-                                        data_str = line[5:].strip()
-                                        if not data_str:
-                                            continue
-                                        try:
-                                            data = json.loads(data_str)
-                                            candidates = data.get("candidates", [])
-                                            if candidates and "content" in candidates[0]:
-                                                parts = candidates[0]["content"].get("parts", [])
-                                                for p in parts:
-                                                    txt = p.get("text", "")
-                                                    if txt:
-                                                        streamed_any = True
-                                                        yield txt
-                                        except Exception:
-                                            continue
-                                if streamed_any:
-                                    return
-                except Exception as e:
-                    logger.warning(f"[LLMService] Gemini streaming error: {e}")
+                        async with httpx.AsyncClient(timeout=45.0) as client:
+                            async with client.stream("POST", endpoint, json=payload) as response:
+                                if response.status_code == 200:
+                                    streamed_any = False
+                                    async for line in response.aiter_lines():
+                                        line = line.strip()
+                                        if line.startswith("data:"):
+                                            data_str = line[5:].strip()
+                                            if not data_str:
+                                                continue
+                                            try:
+                                                data = json.loads(data_str)
+                                                candidates = data.get("candidates", [])
+                                                if candidates and "content" in candidates[0]:
+                                                    parts = candidates[0]["content"].get("parts", [])
+                                                    for p in parts:
+                                                        txt = p.get("text", "")
+                                                        if txt:
+                                                            streamed_any = True
+                                                            yield txt
+                                            except Exception:
+                                                continue
+                                    if streamed_any:
+                                        return
+                                else:
+                                    logger.warning(f"[LLMService] Gemini streaming key ...{key[-6:]} returned status {response.status_code}")
+                                    continue
+                    except Exception as e:
+                        logger.warning(f"[LLMService] Gemini streaming error with key ...{key[-6:]}: {e}")
+                        continue
 
             elif provider == "groq" and settings.GROQ_API_KEY and len(settings.GROQ_API_KEY.strip()) > 5:
                 try:

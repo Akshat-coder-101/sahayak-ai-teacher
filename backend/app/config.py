@@ -52,6 +52,16 @@ class Settings(BaseSettings):
     COLOSSYAN_API_KEY: str = os.getenv("COLOSSYAN_API_KEY", "")
     REPLICATE_API_TOKEN: str = os.getenv("REPLICATE_API_TOKEN", "")
     HUGGINGFACE_API_KEY: str = os.getenv("HUGGINGFACE_API_KEY", "")
+
+    @property
+    def gemini_api_keys(self) -> List[str]:
+        raw = self.GEMINI_API_KEY or ""
+        return [k.strip() for k in raw.split(",") if len(k.strip()) > 5]
+
+    @property
+    def huggingface_api_keys(self) -> List[str]:
+        raw = self.HUGGINGFACE_API_KEY or ""
+        return [k.strip() for k in raw.split(",") if len(k.strip()) > 5]
     
     AVATAR_DEFAULT_ID: str = os.getenv("AVATAR_DEFAULT_ID", "amy-j37u")
     TEACHER_IMAGE_URL: str = os.getenv("TEACHER_IMAGE_URL", "")

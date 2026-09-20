@@ -55,32 +55,32 @@ class EmbeddingService:
             return [0.0] * 768
 
         # 1. Primary: Production Gemini Semantic Neural Embeddings
-        if (
-            settings.GEMINI_API_KEY and 
-            len(settings.GEMINI_API_KEY.strip()) > 5 and 
-            settings.EMBEDDING_PROVIDER.lower() == "gemini"
-        ):
+        keys = settings.gemini_api_keys
+        if keys and settings.EMBEDDING_PROVIDER.lower() == "gemini":
             model_name = getattr(settings, "GEMINI_EMBEDDING_MODEL", "gemini-embedding-001")
-            for target_model in [model_name, "gemini-embedding-001", "text-embedding-004"]:
-                try:
-                    endpoint = f"https://generativelanguage.googleapis.com/v1beta/models/{target_model}:embedContent?key={settings.GEMINI_API_KEY}"
-                    payload = {
-                        "model": f"models/{target_model}",
-                        "content": {
-                            "parts": [{"text": cleaned}]
-                        },
-                        "output_dimensionality": 768
-                    }
-                    with httpx.Client(timeout=10.0) as client:
-                        resp = client.post(endpoint, json=payload)
-                        if resp.status_code == 200:
-                            data = resp.json()
-                            values = data.get("embedding", {}).get("values", [])
-                            if values and len(values) == 768:
-                                return values
-                except Exception as e:
-                    logger.debug(f"[EmbeddingService] Attempt with {target_model} failed: {e}")
-            logger.warning("[EmbeddingService] Gemini neural embedding API exhausted/unavailable; engaging offline deterministic fallback.")
+            for key in keys:
+                for target_model in [model_name, "gemini-embedding-001", "text-embedding-004"]:
+                    try:
+                        endpoint = f"https://generativelanguage.googleapis.com/v1beta/models/{target_model}:embedContent?key={key}"
+                        payload = {
+                            "model": f"models/{target_model}",
+                            "content": {
+                                "parts": [{"text": cleaned}]
+                            },
+                            "output_dimensionality": 768
+                        }
+                        with httpx.Client(timeout=10.0) as client:
+                            resp = client.post(endpoint, json=payload)
+                            if resp.status_code == 200:
+                                data = resp.json()
+                                values = data.get("embedding", {}).get("values", [])
+                                if values and len(values) == 768:
+                                    return values
+                            else:
+                                logger.debug(f"[EmbeddingService] Key ...{key[-6:]} with {target_model} status {resp.status_code}")
+                    except Exception as e:
+                        logger.debug(f"[EmbeddingService] Key ...{key[-6:]} with {target_model} failed: {e}")
+            logger.warning("[EmbeddingService] Gemini neural embedding API exhausted across all keys; engaging offline deterministic fallback.")
 
         # 2. Offline Fallback: Deterministic pseudo-embedding for network resilience
         return cls._deterministic_sha256_embedding(cleaned, dim=768)

@@ -312,7 +312,8 @@ class AvatarService:
                 logger.warning(f"[AvatarService] Replicate call failed: {e}")
 
         # 7. Free Hugging Face Avatar Inference API (SDXL Base 1.0)
-        if settings.HUGGINGFACE_API_KEY and len(settings.HUGGINGFACE_API_KEY.strip()) > 5 and settings.AVATAR_PROVIDER == "huggingface":
+        hf_keys = settings.huggingface_api_keys
+        if hf_keys and settings.AVATAR_PROVIDER == "huggingface":
             try:
                 prompt = "Professional friendly university AI professor teacher portrait, crisp lighting, high quality, photorealistic, neutral classroom background, 8k resolution"
                 prompt_hash = hashlib.sha256(prompt.encode("utf-8")).hexdigest()[:12]
@@ -334,23 +335,29 @@ class AvatarService:
                     }
 
                 endpoint = "https://api-inference.huggingface.co/models/stabilityai/stable-diffusion-xl-base-1.0"
-                headers = {"Authorization": f"Bearer {settings.HUGGINGFACE_API_KEY}"}
                 payload = {"inputs": prompt}
 
-                async with httpx.AsyncClient(timeout=45.0) as client:
-                    resp = await client.post(endpoint, headers=headers, json=payload)
-                    if resp.status_code == 200 and len(resp.content) > 1024:
-                        with open(file_path, "wb") as f:
-                            f.write(resp.content)
-                        logger.info(f"[AvatarService] Successfully generated and cached HuggingFace SDXL portrait to {filename}.")
-                        return {
-                            "provider": "huggingface",
-                            "status": "ready",
-                            "avatar_name": "Prof. Sahayak AI",
-                            "avatar_avatar_url": f"/media/{filename}",
-                            "is_animated_canvas": True,
-                            "video_url": None
-                        }
+                for hf_key in hf_keys:
+                    headers = {"Authorization": f"Bearer {hf_key}"}
+                    try:
+                        async with httpx.AsyncClient(timeout=45.0) as client:
+                            resp = await client.post(endpoint, headers=headers, json=payload)
+                            if resp.status_code == 200 and len(resp.content) > 1024:
+                                with open(file_path, "wb") as f:
+                                    f.write(resp.content)
+                                logger.info(f"[AvatarService] Successfully generated and cached HuggingFace SDXL portrait to {filename} with key ...{hf_key[-6:]}.")
+                                return {
+                                    "provider": "huggingface",
+                                    "status": "ready",
+                                    "avatar_name": "Prof. Sahayak AI",
+                                    "avatar_avatar_url": f"/media/{filename}",
+                                    "is_animated_canvas": True,
+                                    "video_url": None
+                                }
+                            else:
+                                logger.warning(f"[AvatarService] HuggingFace key ...{hf_key[-6:]} returned status {resp.status_code}: {resp.text[:100]}. Trying next key...")
+                    except Exception as err:
+                        logger.warning(f"[AvatarService] HuggingFace request error with key ...{hf_key[-6:]}: {err}")
             except Exception as e:
                 logger.warning(f"[AvatarService] HuggingFace SDXL avatar generation failed ({e}); using stock presenter fallback.")
 
