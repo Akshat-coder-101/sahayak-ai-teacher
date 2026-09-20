@@ -1,4 +1,4 @@
-# Root Dockerfile for Railway / Cloud Container Deployments
+# Sahayak AI Teacher — Multi-Stage Cloud Production Dockerfile
 FROM python:3.11-slim
 
 # System dependencies:

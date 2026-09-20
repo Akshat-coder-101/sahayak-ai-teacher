@@ -1,6 +1,6 @@
 # Sahayak AI Teacher — Frontend 🎓
 
-Modern, immersive educational web application built with **Next.js 15 (App Router)** and **React 19**, delivering an interactive theater-mode classroom, real-time blackboard visualization, audio-reactive animated canvas avatar, curriculum DAG exploration, and 8 advanced study tools.
+Modern, immersive educational web application built with **Next.js 15 (App Router)** and **React 19**, delivering an interactive theater-mode classroom, real-time blackboard visualization, audio-reactive animated canvas avatar, curriculum DAG exploration, and 8 advanced study tools for students.
 
 ---
 

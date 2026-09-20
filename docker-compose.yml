@@ -1,3 +1,4 @@
+# Sahayak AI Teacher — Multi-Container Stack (Postgres pgvector + FastAPI + Next.js)
 version: "3.8"
 
 services:

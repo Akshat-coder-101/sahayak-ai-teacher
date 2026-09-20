@@ -2,7 +2,7 @@
 
 > An adaptive, document‑grounded AI teacher that **teaches through video, voice, and visuals** — plans a lesson, explains it as a narrated video with diagrams, checks understanding, diagnoses misconceptions, re‑teaches, and produces a personalized learning report. Multilingual (English / Hindi / Hinglish and more), grounded in the learner's own uploaded material via RAG.
 
-**Version:** 1.0.0 · **Stack:** FastAPI + SQLAlchemy (backend) · Next.js 15 / React 19 (frontend) · **Submission:** Open Innovation Hackathon 2026.
+**Version:** 1.0.0 · **Stack:** FastAPI + SQLAlchemy (backend) · Next.js 15 / React 19 (frontend) · **Submission:** AI Innovation Hackathon 2026.
 
 ---
 
