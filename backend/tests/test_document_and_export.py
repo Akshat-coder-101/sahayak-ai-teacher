@@ -5,8 +5,12 @@ import uuid
 import pytest
 import docx
 import pptx
+import pptx.util
 from fastapi.testclient import TestClient
+from typing import cast
 from unittest.mock import patch
+from pptx.shapes.autoshape import Shape
+from pptx.util import Inches
 
 # Add backend directory to sys.path
 sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), "..")))
@@ -67,14 +71,17 @@ def create_sample_pptx() -> bytes:
     # Slide 1: Title slide
     title_slide_layout = prs.slide_layouts[0]
     slide1 = prs.slides.add_slide(title_slide_layout)
-    slide1.shapes.title.text = "Introduction to Quantum Computing"
-    slide1.placeholders[1].text = "Foundations of Qubits and Superposition\nBy Prof. Sahayak"
+    if slide1.shapes.title:
+        slide1.shapes.title.text = "Introduction to Quantum Computing"
+    cast(Shape, slide1.placeholders[1]).text = "Foundations of Qubits and Superposition\nBy Prof. Sahayak"
     
     # Slide 2: Bullet slide with speaker notes
     bullet_slide_layout = prs.slide_layouts[1]
     slide2 = prs.slides.add_slide(bullet_slide_layout)
-    slide2.shapes.title.text = "Qubits vs Classical Bits"
-    tf = slide2.shapes.placeholders[1].text_frame
+    if slide2.shapes.title:
+        slide2.shapes.title.text = "Qubits vs Classical Bits"
+    body_shape = cast(Shape, slide2.placeholders[1])
+    tf = body_shape.text_frame
     tf.text = "Classical bits exist strictly in state 0 or 1"
     p = tf.add_paragraph()
     p.text = "Qubits leverage quantum superposition |ψ⟩ = α|0⟩ + β|1⟩"
@@ -86,18 +93,19 @@ def create_sample_pptx() -> bytes:
     # Add speaker notes to Slide 2
     notes_slide = slide2.notes_slide
     text_frame = notes_slide.notes_text_frame
-    text_frame.text = "Emphasize to students that measuring the qubit collapses the wave function."
+    if text_frame is not None:
+        text_frame.text = "Emphasize to students that measuring the qubit collapses the wave function."
     
     # Slide 3: Slide with table
     blank_layout = prs.slide_layouts[6]
     slide3 = prs.slides.add_slide(blank_layout)
     
     # Add title box
-    txBox = slide3.shapes.add_textbox(0, 0, pptx.util.Inches(8), pptx.util.Inches(1))
+    txBox = slide3.shapes.add_textbox(Inches(0), Inches(0), Inches(8), Inches(1))
     txBox.text_frame.text = "Quantum Algorithms Summary"
     
     # Add table
-    table_shape = slide3.shapes.add_table(3, 2, pptx.util.Inches(1), pptx.util.Inches(1.5), pptx.util.Inches(6), pptx.util.Inches(2))
+    table_shape = slide3.shapes.add_table(3, 2, Inches(1), Inches(1.5), Inches(6), Inches(2))
     table = table_shape.table
     table.cell(0, 0).text = "Algorithm"
     table.cell(0, 1).text = "Speedup"
@@ -347,12 +355,16 @@ async def test_video_export_worker_graceful_missing_ffmpeg():
         with patch("app.services.video.shutil.which", return_value=None):
             await VideoService.export_full_lesson_video(job_id=job_id, session_id=session_id)
 
-        # Inspect job record
+        # Inspect job record with refreshed session state
+        db.expire_all()
         updated_job = db.query(DBExportJob).filter(DBExportJob.id == job_id).first()
         assert updated_job is not None
+        db.refresh(updated_job)
         # On host without ffmpeg, status becomes failed with descriptive message rather than crashing
         assert updated_job.status in ["completed", "failed"]
         if updated_job.status == "failed":
-            assert "ffmpeg" in updated_job.error_message.lower() or "not found" in updated_job.error_message.lower()
+            assert updated_job.error_message is not None, "Export job marked as failed must have an error_message recorded"
+            err_text = updated_job.error_message.lower()
+            assert "ffmpeg" in err_text or "not found" in err_text
     finally:
         db.close()

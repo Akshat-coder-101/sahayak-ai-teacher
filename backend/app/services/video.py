@@ -816,10 +816,11 @@ class VideoService:
             logger.exception(f"[VideoService] Export job {job_id} encountered fatal error: {err}")
             cls.set_job_progress(job_id, status="failed", progress=0, error_message=str(err))
             try:
+                db.rollback()
                 job = db.query(DBExportJob).filter(DBExportJob.id == job_id).first()
                 if job:
                     job.status = "failed"
-                    job.error_message = str(err)
+                    job.error_message = str(err) or "Unknown video export failure"
                     db.commit()
             except Exception:
                 pass
