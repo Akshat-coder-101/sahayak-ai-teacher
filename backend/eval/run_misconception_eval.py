@@ -54,10 +54,17 @@ async def run_misconception_benchmark():
     for item in dataset:
         # Dynamically set session question and correct answer for this item
         session.topic = item["concept"]
-        session.plan_json["segments"][0]["concept"] = item["concept"]
-        session.plan_json["segments"][0]["checkpoint_question"] = {
-            "question": item["question"],
-            "correct_answer": item["correct_answer"]
+        session.plan_json = {
+            "segments": [
+                {
+                    "id": 1,
+                    "concept": item["concept"],
+                    "checkpoint_question": {
+                        "question": item["question"],
+                        "correct_answer": item["correct_answer"]
+                    }
+                }
+            ]
         }
         db.commit()
 
