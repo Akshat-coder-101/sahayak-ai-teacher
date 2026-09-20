@@ -140,19 +140,25 @@ def seed_demo_data():
         session = db.query(DBLessonSession).filter(DBLessonSession.id == DEMO_SESSION_ID).first()
         
         plan_json = {
+            "session_id": DEMO_SESSION_ID,
             "topic": "Photosynthesis & Bioenergetics",
+            "objectives": [
+                "Understand photon capture, photolysis of water, and chlorophyll absorption",
+                "Master carbon fixation via RuBisCO in the Calvin cycle",
+                "Compare photosynthesis with chemiosmotic ATP synthesis in cellular respiration"
+            ],
             "document_id": DEMO_DOC_ID,
-            "document_filename": "photosynthesis_chapter.pdf",
+            "material_id": DEMO_DOC_ID,
             "time_budget_minutes": 15,
-            "target_audience": "intermediate",
+            "learner_level": "intermediate",
             "language": "en",
             "segments": [
                 {
                     "id": 1,
                     "concept": "Light-Dependent Reactions & Chlorophyll Absorption",
-                    "learning_objective": "Understand photon capture, photolysis of water, and why plants reflect green light.",
+                    "depth": "intermediate",
+                    "est_minutes": 5,
                     "visual_type": "labeled-diagram",
-                    "diagram_title": "Chloroplast Thylakoid Membrane & Light Reactions",
                     "teacher_script": (
                         "Welcome to our lesson on Bioenergetics! Today, let's explore how living systems transform solar light "
                         "into biological fuel. Inside the thylakoid membrane, chlorophyll pigments absorb blue and red light. "
@@ -160,72 +166,113 @@ def seed_demo_data():
                         "because green wavelengths are reflected right back to our eyes! Photolysis splits water into oxygen, "
                         "generating the initial ATP and NADPH energy carriers."
                     ),
+                    "summary": "Photolysis splits H2O -> 2H+ + 1/2 O2 + 2e-. Chlorophyll absorbs red & blue, reflects green.",
                     "board_visual": {
                         "type": "diagram",
                         "title": "Light Reactions & Thylakoid Electron Transport",
                         "summary": "Photolysis splits H2O -> 2H+ + 1/2 O2 + 2e-. Chlorophyll absorbs red & blue, reflects green.",
                         "labels": ["Photosystem II (P680)", "Electron Transport Chain", "Photosystem I (P700)", "ATP Synthase"]
                     },
-                    "checkpoint_question": "Why do plant leaves appear green under white sunlight?",
-                    "options": [
-                        "They absorb green wavelengths to power photosynthesis",
-                        "Chlorophyll cannot absorb green light efficiently, so it is reflected",
-                        "Mitochondria emit green luminescence during cellular respiration",
-                        "Water photolysis converts green photons into oxygen"
-                    ],
-                    "correct_answer": "Chlorophyll cannot absorb green light efficiently, so it is reflected",
-                    "source_citations": [f"chunk-{DEMO_DOC_ID}-p1"]
+                    "checkpoint_question": {
+                        "id": "cp-1",
+                        "type": "mcq",
+                        "question": "Why do plant leaves appear green under white sunlight?",
+                        "options": [
+                            "They absorb green wavelengths to power photosynthesis",
+                            "Chlorophyll cannot absorb green light efficiently, so it is reflected",
+                            "Mitochondria emit green luminescence during cellular respiration",
+                            "Water photolysis converts green photons into oxygen"
+                        ],
+                        "correct_answer": "Chlorophyll cannot absorb green light efficiently, so it is reflected",
+                        "concept_tested": "Chlorophyll Absorption Spectrum"
+                    },
+                    "source_citations": [
+                        {
+                            "chunk_id": f"chunk-{DEMO_DOC_ID}-p1",
+                            "page": 1,
+                            "quote": "Chlorophyll pigments absorb blue and red light, but reflect green wavelengths."
+                        }
+                    ]
                 },
                 {
                     "id": 2,
                     "concept": "The Calvin Cycle & Carbon Fixation",
-                    "learning_objective": "Master how RuBisCO fixes atmospheric CO2 into glucose using ATP and NADPH.",
+                    "depth": "intermediate",
+                    "est_minutes": 5,
                     "visual_type": "labeled-diagram",
-                    "diagram_title": "The Three Phases of the Calvin Cycle",
                     "teacher_script": (
                         "Now let us move into the chloroplast stroma for the Calvin cycle. Even without direct light, this cycle "
                         "uses the ATP and NADPH generated in Phase 1. The key enzyme RuBisCO fixes carbon dioxide into 3-PGA, "
                         "which is then reduced into high-energy G3P molecules to synthesize glucose."
                     ),
+                    "summary": "Carbon Fixation (RuBisCO) -> Reduction (3-PGA to G3P) -> Regeneration of RuBP",
                     "board_visual": {
                         "type": "diagram",
                         "title": "Calvin Cycle: Fixation, Reduction, Regeneration",
                         "summary": "Carbon Fixation (RuBisCO) -> Reduction (3-PGA to G3P) -> Regeneration of RuBP",
                         "labels": ["RuBisCO Enzyme", "3-PGA Intermediate", "G3P Sugar Precursor", "RuBP Acceptor"]
                     },
-                    "checkpoint_question": "Which enzyme catalyzes the initial fixation of carbon dioxide in the Calvin cycle?",
-                    "options": ["ATP Synthase", "RuBisCO", "DNA Polymerase", "Pyruvate Kinase"],
-                    "correct_answer": "RuBisCO",
-                    "source_citations": [f"chunk-{DEMO_DOC_ID}-p2"]
+                    "checkpoint_question": {
+                        "id": "cp-2",
+                        "type": "mcq",
+                        "question": "Which enzyme catalyzes the initial fixation of carbon dioxide in the Calvin cycle?",
+                        "options": ["ATP Synthase", "RuBisCO", "DNA Polymerase", "Pyruvate Kinase"],
+                        "correct_answer": "RuBisCO",
+                        "concept_tested": "Carbon Fixation Enzyme"
+                    },
+                    "source_citations": [
+                        {
+                            "chunk_id": f"chunk-{DEMO_DOC_ID}-p2",
+                            "page": 2,
+                            "quote": "The enzyme RuBisCO catalyzes the reaction between CO2 and RuBP."
+                        }
+                    ]
                 },
                 {
                     "id": 3,
                     "concept": "Cellular Respiration & Chemiosmotic ATP Synthesis",
-                    "learning_objective": "Compare aerobic glycolysis and mitochondrial oxidative phosphorylation.",
+                    "depth": "intermediate",
+                    "est_minutes": 5,
                     "visual_type": "labeled-diagram",
-                    "diagram_title": "Cellular Respiration Metabolic Pathway",
                     "teacher_script": (
                         "Finally, while plants produce glucose, all aerobic organisms break down glucose through cellular respiration. "
                         "From glycolysis in the cytoplasm to the Krebs cycle and oxidative phosphorylation in the mitochondria, "
                         "each glucose molecule yields roughly 30 to 32 ATP molecules to power biological life."
                     ),
+                    "summary": "C6H12O6 + 6O2 -> 6CO2 + 6H2O + 30-32 ATP across 4 metabolic stages.",
                     "board_visual": {
                         "type": "diagram",
                         "title": "Cellular Respiration: Glucose to 32 ATP",
                         "summary": "C6H12O6 + 6O2 -> 6CO2 + 6H2O + 30-32 ATP across 4 metabolic stages.",
                         "labels": ["Cytoplasmic Glycolysis", "Pyruvate Oxidation", "Citric Acid Cycle", "Electron Transport Chain"]
                     },
-                    "checkpoint_question": "Where does oxidative phosphorylation take place inside eukaryotic cells?",
-                    "options": [
-                        "Inner mitochondrial membrane",
-                        "Chloroplast stroma",
-                        "Cell nucleus",
-                        "Extracellular fluid"
-                    ],
-                    "correct_answer": "Inner mitochondrial membrane",
-                    "source_citations": [f"chunk-{DEMO_DOC_ID}-p3"]
+                    "checkpoint_question": {
+                        "id": "cp-3",
+                        "type": "mcq",
+                        "question": "Where does oxidative phosphorylation take place inside eukaryotic cells?",
+                        "options": [
+                            "Inner mitochondrial membrane",
+                            "Chloroplast stroma",
+                            "Cell nucleus",
+                            "Extracellular fluid"
+                        ],
+                        "correct_answer": "Inner mitochondrial membrane",
+                        "concept_tested": "Mitochondrial ATP Synthesis"
+                    },
+                    "source_citations": [
+                        {
+                            "chunk_id": f"chunk-{DEMO_DOC_ID}-p3",
+                            "page": 3,
+                            "quote": "Oxidative phosphorylation takes place at the inner mitochondrial membrane."
+                        }
+                    ]
                 }
-            ]
+            ],
+            "final_assessment": {
+                "type": "quiz",
+                "question_count": 3,
+                "difficulty": "adaptive"
+            }
         }
 
         if not session:
