@@ -7,7 +7,8 @@ load_dotenv(os.path.join(os.path.dirname(__file__), "..", "..", ".env"))
 load_dotenv(os.path.join(os.path.dirname(__file__), "..", ".env"))
 
 from pydantic_settings import BaseSettings, SettingsConfigDict
-from typing import List
+from pydantic import field_validator
+from typing import List, Any
 
 class Settings(BaseSettings):
     # App
@@ -71,8 +72,16 @@ class Settings(BaseSettings):
         "DATABASE_URL", 
         f"sqlite:///{os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))), 'sahayak.db').replace(os.sep, '/')}"
     )
-    if DATABASE_URL.startswith("postgres://"):
-        DATABASE_URL = DATABASE_URL.replace("postgres://", "postgresql://", 1)
+
+    @field_validator("DATABASE_URL", mode="before")
+    @classmethod
+    def normalize_database_url(cls, v: Any) -> Any:
+        if isinstance(v, str):
+            if v.startswith("postgres://"):
+                return v.replace("postgres://", "postgresql+psycopg2://", 1)
+            elif v.startswith("postgresql://"):
+                return v.replace("postgresql://", "postgresql+psycopg2://", 1)
+        return v
 
     SUPABASE_URL: str = os.getenv("SUPABASE_URL", "")
     SUPABASE_SERVICE_ROLE_KEY: str = os.getenv("SUPABASE_SERVICE_ROLE_KEY", "")
