@@ -7,6 +7,7 @@ import json
 import hashlib
 import asyncio
 import uuid
+import wave
 from typing import Dict, Any, List, Optional, Tuple
 from PIL import Image, ImageDraw, ImageFont
 import matplotlib
@@ -30,6 +31,52 @@ class VideoService:
         return cache_dir
 
     @classmethod
+    def _probe_audio_duration(cls, file_path: str) -> Optional[float]:
+        """Probes exact audio duration via wave, ffprobe, or file heuristics."""
+        if not (os.path.exists(file_path) and os.path.getsize(file_path) > 100):
+            return None
+
+        # 1. WAV header parsing
+        if file_path.lower().endswith(".wav"):
+            try:
+                with wave.open(file_path, "rb") as wf:
+                    frames = wf.getnframes()
+                    rate = wf.getframerate()
+                    if rate > 0 and frames > 0:
+                        return max(1.0, round(frames / float(rate), 2))
+            except Exception:
+                pass
+
+        # 2. ffprobe (supports mp3, aac, wav, ogg)
+        ffprobe_bin = shutil.which("ffprobe")
+        if ffprobe_bin:
+            try:
+                cmd = [
+                    ffprobe_bin,
+                    "-v", "error",
+                    "-show_entries", "format=duration",
+                    "-of", "default=noprint_wrappers=1:nokey=1",
+                    file_path
+                ]
+                res = subprocess.run(cmd, stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True, timeout=5)
+                if res.returncode == 0 and res.stdout.strip():
+                    val = float(res.stdout.strip())
+                    if val > 0.5:
+                        return round(val, 2)
+            except Exception:
+                pass
+
+        # 3. MP3 approximate bitrate (128kbps = 16000 bytes/sec)
+        if file_path.lower().endswith(".mp3"):
+            try:
+                size_bytes = os.path.getsize(file_path)
+                return max(3.0, round(size_bytes / 16000.0, 2))
+            except Exception:
+                pass
+
+        return None
+
+    @classmethod
     def _get_cached_audio(cls, text: str, language: str, media_dir: str) -> Optional[Tuple[str, float]]:
         h = hashlib.sha256(f"{text.strip()}_{language}".encode("utf-8")).hexdigest()[:16]
         cache_path = os.path.join(cls._get_cache_dir(), f"audio_{h}.mp3")
@@ -42,7 +89,9 @@ class VideoService:
                 dest_path = os.path.join(media_dir, dest_name)
                 if not os.path.exists(dest_path):
                     shutil.copyfile(cache_path, dest_path)
-                return (dest_name, float(meta.get("duration_sec", 6.0)))
+                probed = cls._probe_audio_duration(dest_path)
+                final_dur = probed or float(meta.get("duration_sec", 25.0))
+                return (dest_name, final_dur)
             except Exception:
                 return None
         return None
@@ -306,6 +355,7 @@ class VideoService:
         visual_spec: Optional[Dict[str, Any]] = None,
         captions: Optional[List[Any]] = None,
         anchor_image_path: Optional[str] = None,
+        duration_sec: Optional[float] = None,
         language: str = "en"
     ) -> Dict[str, Any]:
         """
@@ -327,19 +377,26 @@ class VideoService:
         os.makedirs(media_dir, exist_ok=True)
 
         audio_filename = None
-        duration_sec = 6.0
+        # Estimate pedagogical reading duration from script words (~2.1 words/sec, min 20s)
+        word_count = len(script.split()) if script else 0
+        script_est_duration = max(20.0, round(word_count / 2.1, 2)) if word_count > 8 else 20.0
+        final_duration_sec = duration_sec if (duration_sec and duration_sec > 1.0) else script_est_duration
 
         if audio_url and audio_url.startswith("/media/"):
             audio_filename = os.path.basename(audio_url)
             possible_path = os.path.join(media_dir, audio_filename)
-            if not (os.path.exists(possible_path) and os.path.getsize(possible_path) > 0):
+            if os.path.exists(possible_path) and os.path.getsize(possible_path) > 0:
+                probed = cls._probe_audio_duration(possible_path)
+                if probed and probed > 1.0:
+                    final_duration_sec = probed
+            else:
                 audio_filename = None
 
         if not audio_filename:
             cached_audio = cls._get_cached_audio(script, language, media_dir)
             if cached_audio:
-                audio_filename, duration_sec = cached_audio
-                logger.info(f"[VideoService] Audio cache HIT: {audio_filename} ({duration_sec}s)")
+                audio_filename, final_duration_sec = cached_audio
+                logger.info(f"[VideoService] Audio cache HIT: {audio_filename} ({final_duration_sec}s)")
             else:
                 try:
                     tts_res = await TTSService.generate_speech(script, language=language)
@@ -347,12 +404,35 @@ class VideoService:
                         audio_filename = os.path.basename(tts_res["audio_url"])
                         possible_path = os.path.join(media_dir, audio_filename)
                         if os.path.exists(possible_path) and os.path.getsize(possible_path) > 0:
-                            duration_sec = float(tts_res.get("duration_seconds") or 6.0)
-                            cls._save_cached_audio(script, language, possible_path, duration_sec)
+                            probed = cls._probe_audio_duration(possible_path)
+                            final_duration_sec = probed or float(tts_res.get("duration_seconds") or script_est_duration)
+                            cls._save_cached_audio(script, language, possible_path, final_duration_sec)
                         else:
                             audio_filename = None
+                    elif tts_res.get("duration_seconds"):
+                        final_duration_sec = float(tts_res["duration_seconds"])
                 except Exception as e:
                     logger.warning(f"[VideoService] Audio generation for video failed: {e}")
+
+        # If no audio track was generated by external TTS, synthesize a silent audio track so the video renders fully
+        if not audio_filename:
+            silent_name = f"silent_{session_id}_{segment_id}_{uuid.uuid4().hex[:6]}.wav"
+            silent_path = os.path.join(media_dir, silent_name)
+            sil_cmd = [
+                ffmpeg_bin,
+                "-y",
+                "-f", "lavfi",
+                "-i", "anullsrc=r=24000:cl=mono",
+                "-t", str(final_duration_sec),
+                "-acodec", "pcm_s16le",
+                silent_path
+            ]
+            try:
+                sil_res = subprocess.run(sil_cmd, stdout=subprocess.PIPE, stderr=subprocess.PIPE, timeout=8)
+                if sil_res.returncode == 0 and os.path.exists(silent_path):
+                    audio_filename = silent_name
+            except Exception as se:
+                logger.warning(f"[VideoService] Silent audio fallback error: {se}")
 
         if not audio_filename:
             logger.warning("[VideoService] No audio track available for video synthesis.")
@@ -362,6 +442,8 @@ class VideoService:
                 "video_url": None,
                 "duration_sec": 0.0
             }
+
+        duration_sec = final_duration_sec
 
         concept = (visual_spec or {}).get("title") or f"Segment {segment_id}"
         
@@ -496,7 +578,7 @@ class VideoService:
 
         try:
             logger.info(f"[VideoService] Executing fast multi-scene ffmpeg video render...")
-            res = subprocess.run(cmd, stdout=subprocess.PIPE, stderr=subprocess.PIPE, cwd=media_dir, timeout=25)
+            res = subprocess.run(cmd, stdout=subprocess.PIPE, stderr=subprocess.PIPE, cwd=media_dir, timeout=60)
             if res.returncode == 0 and os.path.exists(out_video_path) and os.path.getsize(out_video_path) > 1024:
                 logger.info(f"[VideoService] Successfully rendered multi-scene animated video: {out_video_filename}")
                 return {
@@ -527,7 +609,7 @@ class VideoService:
             out_video_filename
         ]
         try:
-            res_fb = subprocess.run(fb_cmd, stdout=subprocess.PIPE, stderr=subprocess.PIPE, cwd=media_dir, timeout=15)
+            res_fb = subprocess.run(fb_cmd, stdout=subprocess.PIPE, stderr=subprocess.PIPE, cwd=media_dir, timeout=45)
             if res_fb.returncode == 0 and os.path.exists(out_video_path) and os.path.getsize(out_video_path) > 1024:
                 return {
                     "provider": "ffmpeg_local",
@@ -666,6 +748,7 @@ class VideoService:
                     v_dict = visual_spec.model_dump() if hasattr(visual_spec, "model_dump") else (visual_spec or {"title": concept, "type": "labeled-diagram"})
                     captions = getattr(seg_render, "captions", []) if seg_render else []
                     audio_url = getattr(seg_render, "audio_url", None) if seg_render else None
+                    audio_duration = getattr(seg_render, "audio_duration", None)
 
                     seg_res = await cls.render_segment_video(
                         segment_id=seg_id,
@@ -674,6 +757,7 @@ class VideoService:
                         audio_url=audio_url,
                         visual_spec=v_dict,
                         captions=captions,
+                        duration_sec=audio_duration,
                         language=sess.language or "en"
                     )
 

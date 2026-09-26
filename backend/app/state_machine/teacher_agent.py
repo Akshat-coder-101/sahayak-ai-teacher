@@ -1187,14 +1187,17 @@ Output JSON with:
                 visual_spec=visual_spec.model_dump(),
                 captions=captions,
                 anchor_image_path=anchor_portrait,
+                duration_sec=audio_duration,
                 language=active_lang
             )
         else:
+            word_count = len(spoken_script.split()) if spoken_script else 0
+            est_duration = max(20.0, round(word_count / 2.1, 2)) if word_count > 8 else 20.0
             video_res = {
                 "provider": "ffmpeg_local",
                 "status": "ready",
                 "video_url": None,
-                "duration_sec": audio_duration or 6.0
+                "duration_sec": audio_duration or est_duration
             }
         
         return LessonSegmentRender(
